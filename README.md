@@ -10,6 +10,9 @@ lighthearted punishments when you fail. Mobile-first web app.
 - **Quest board** — categorized quests (Fitness, Social, Creativity, Adventure,
   Mind/Skill, Kindness, Wildcard) with difficulty, point values, proof type and
   time limits. Admins add/remove quests.
+- **Your own quests** — any member can **propose** a custom quest; the admin
+  approves or declines it. Approved proposals land on the board.
+- **Spin wheel** — 🎡 spin to let fate pick your next challenge from the board.
 - **Proof & voting** — submit photo/video/text proof, squad votes Approve/Reject
   (majority, unanimous, or quorum %, configurable). Anonymous voting option.
 - **Points & punishments** — approved quests award points and build streaks;
@@ -17,8 +20,10 @@ lighthearted punishments when you fail. Mobile-first web app.
   with a due date.
 - **Leaderboard, stats, badges** — live rankings, streaks, completion rate,
   favorite category, achievements.
-- **Notifications** — new submissions to vote on, vote results, punishments.
+- **Notifications** — new submissions to vote on, vote results, punishments,
+  quest proposals.
 - **Admin tools** — manage categories, punishment pool, voting rules, invite code.
+- **Installable (PWA)** — add to your phone's home screen and it runs like an app.
 
 ## Tech stack
 
@@ -81,6 +86,19 @@ python smoke_test.py   # end-to-end API test (register → join → quest → su
   Vite proxies it. In production, serve the built `frontend/dist` behind a
   reverse proxy that forwards `/api` and `/uploads` to the FastAPI process, or
   mount it via FastAPI static files.
+- The PWA (installable app) only registers its service worker in production
+  builds — try it with `npm run build && npm run preview`.
 - Set a strong `SECRET_KEY` env var for the backend in production.
 - For real multi-user deployments, swap `DATABASE_URL` to Postgres (SQLAlchemy
   handles it). Photo/video uploads store to `backend/uploads` by default.
+
+## GitHub
+
+Push the repo wherever you like (the commit history is clean and the demo data
+is gitignored):
+
+```bash
+git remote add origin git@github.com:YOU/sidequest.git
+git branch -M main
+git push -u origin main
+```
