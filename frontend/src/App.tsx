@@ -119,9 +119,9 @@ export default function App() {
       <Route
         path="/admin"
         element={
-          <Protected>
+          <AppShell>
             <AdminPage />
-          </Protected>
+          </AppShell>
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />

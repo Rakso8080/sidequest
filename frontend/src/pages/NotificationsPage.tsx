@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import type { Notification } from "../types";
 import { EmptyState, PageLoader } from "../components/ui";
 import { timeAgo } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 
 const TYPE_ICON: Record<string, string> = {
   vote: "🗳️",
@@ -13,6 +14,7 @@ const TYPE_ICON: Record<string, string> = {
 
 export function NotificationsPage() {
   const qc = useQueryClient();
+  const { t } = useI18n();
   const { data, isLoading } = useQuery<Notification[]>({
     queryKey: ["notifications"],
     queryFn: () => api.get("/notifications"),
@@ -28,16 +30,16 @@ export function NotificationsPage() {
   return (
     <div className="space-y-4">
       <header className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-extrabold">🔔 Notifications</h1>
+        <h1 className="font-display text-2xl font-extrabold">🔔 {t("notifications.title")}</h1>
         {data.some((n) => !n.read) && (
           <button className="text-xs font-bold text-fuchsia-300" onClick={() => markAll.mutate()}>
-            Mark all read
+            {t("notifications.markAll")}
           </button>
         )}
       </header>
 
       {data.length === 0 ? (
-        <EmptyState icon="🔕" title="All quiet" subtitle="Votes, results and punishments will land here." />
+        <EmptyState icon="🔕" title={t("notifications.empty")} />
       ) : (
         <div className="space-y-2">
           {data.map((n) => (

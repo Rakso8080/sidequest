@@ -3,14 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { Dashboard } from "../types";
 import { useAuth } from "../store/auth";
-import { Avatar, PageLoader } from "../components/ui";
+import { Avatar, PageLoader, EmptyState } from "../components/ui";
 import { SubmissionCard } from "../components/SubmissionCard";
 import { VotingCard } from "../components/VotingCard";
-import { EmptyState } from "../components/ui";
 import { RANK_EMOJI } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { data, isLoading } = useQuery<Dashboard>({
     queryKey: ["dashboard"],
     queryFn: () => api.get("/dashboard"),
@@ -28,7 +29,7 @@ export function DashboardPage() {
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-white/40">Squad HQ</div>
           <h1 className="font-display text-2xl font-extrabold">
-            Yo, {name}! <span className="text-fuchsia-400">👋</span>
+            {t("dashboard.welcome")}, {name}! <span className="text-fuchsia-400">👋</span>
           </h1>
         </div>
         <Link
@@ -47,10 +48,10 @@ export function DashboardPage() {
       {/* Stats strip */}
       <div className="grid grid-cols-4 gap-2">
         {[
-          { label: "Points", value: stats.total_points, icon: "💎" },
-          { label: "Day streak", value: stats.streak, icon: "🔥" },
-          { label: "Rank", value: `#${stats.rank}`, icon: "🏅" },
-          { label: "Done", value: stats.quests_completed, icon: "✅" },
+          { label: t("profile.points"), value: stats.total_points, icon: "💎" },
+          { label: t("dashboard.yourStreak"), value: stats.streak, icon: "🔥" },
+          { label: t("profile.rank"), value: `#${stats.rank}`, icon: "🏅" },
+          { label: t("profile.completed"), value: stats.quests_completed, icon: "✅" },
         ].map((s) => (
           <div key={s.label} className="card !p-3 text-center">
             <div className="text-lg leading-none">{s.icon}</div>
@@ -64,7 +65,7 @@ export function DashboardPage() {
       {pending_votes.length > 0 && (
         <section>
           <h2 className="mb-2 font-display text-lg font-bold text-amber-300">
-            🗳️ Needs your vote ({pending_votes.length})
+            🗳️ {t("dashboard.needsVotes")} ({pending_votes.length})
           </h2>
           <div className="space-y-3">
             {pending_votes.map((sub) => (
@@ -77,17 +78,13 @@ export function DashboardPage() {
       {/* Active quests */}
       <section>
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold">⚔️ Active quests</h2>
+          <h2 className="font-display text-lg font-bold">⚔️ {t("dashboard.active")}</h2>
           <Link to="/quests" className="text-xs font-bold text-fuchsia-300">
-            Browse all →
+            {t("quests.board")} →
           </Link>
         </div>
         {active_quests.length === 0 ? (
-          <EmptyState
-            icon="🌱"
-            title="No active quests"
-            subtitle="Pick one from the quest board and start earning."
-          />
+          <EmptyState icon="🌱" title={t("dashboard.noActive")} />
         ) : (
           <div className="space-y-3">
             {active_quests.map((sub) => (
@@ -100,9 +97,9 @@ export function DashboardPage() {
       {/* Leaderboard snapshot */}
       <section>
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold">🏆 Leaderboard</h2>
+          <h2 className="font-display text-lg font-bold">🏆 {t("leaderboard.title")}</h2>
           <Link to="/leaderboard" className="text-xs font-bold text-fuchsia-300">
-            Full board →
+            → {t("leaderboard.title")}
           </Link>
         </div>
         <div className="card divide-y divide-white/5 !p-2">
@@ -117,7 +114,7 @@ export function DashboardPage() {
                   {e.display_name}
                   {e.is_admin && <span className="ml-1 text-[10px] text-amber-300">★</span>}
                 </div>
-                <div className="text-xs text-white/40">🔥 {e.streak} streak</div>
+                <div className="text-xs text-white/40">🔥 {e.streak} {t("common.streak")}</div>
               </div>
               <div className="font-display text-base font-extrabold text-fuchsia-300">{e.total_points}</div>
             </div>
@@ -128,7 +125,7 @@ export function DashboardPage() {
       {/* Punishments */}
       {my_punishments.length > 0 && (
         <section>
-          <h2 className="mb-2 font-display text-lg font-bold text-rose-300">😈 Your punishments</h2>
+          <h2 className="mb-2 font-display text-lg font-bold text-rose-300">😈 {t("profile.myPunishments")}</h2>
           <div className="space-y-2">
             {my_punishments.map((p) => (
               <div key={p.id} className="card flex items-center gap-3 !p-3.5">
@@ -136,7 +133,7 @@ export function DashboardPage() {
                 <div className="flex-1">
                   <div className="text-sm font-bold">{p.description}</div>
                   <div className={`text-xs font-bold ${p.status === "overdue" ? "text-rose-400" : "text-white/40"}`}>
-                    due {new Date(p.due_date).toLocaleDateString()}
+                    {new Date(p.due_date).toLocaleDateString()}
                     {p.status === "overdue" && " · OVERDUE"}
                   </div>
                 </div>

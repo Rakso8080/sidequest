@@ -42,6 +42,7 @@ class TokenOut(BaseModel):
 
 class UpdateProfileIn(BaseModel):
     display_name: Optional[str] = None
+    username: Optional[str] = None
     avatar: Optional[str] = None
     bio: Optional[str] = None
 
@@ -221,12 +222,14 @@ class ChatMessageOut(BaseModel):
     user_avatar: str
     user_avatar_file: Optional[str] = None
     recipient_id: Optional[int] = None
-    text: str
+    text: Optional[str] = None
+    sticker: Optional[str] = None
     created_at: datetime
 
 
 class ChatIn(BaseModel):
-    text: str = Field(min_length=1, max_length=2000)
+    text: Optional[str] = Field(default=None, max_length=2000)
+    sticker: Optional[str] = Field(default=None, max_length=8)
     recipient_id: Optional[int] = None
 
 
@@ -277,6 +280,10 @@ class GlobalQuestIn(BaseModel):
 
 class AdminLoginIn(BaseModel):
     password: str
+
+
+class AdminAdjustPointsIn(BaseModel):
+    points: int = Field(ge=-10000, le=10000)
 
 
 class AdminOut(BaseModel):

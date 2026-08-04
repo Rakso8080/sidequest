@@ -12,11 +12,13 @@ import { SpinWheelModal } from "../components/SpinWheelModal";
 import { PlanQuestModal } from "../components/PlanQuestModal";
 import { useAuth } from "../store/auth";
 import { sfx } from "../lib/sound";
+import { useI18n } from "../lib/i18n";
 
 export function QuestsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { toast, show } = useToast();
+  const { t } = useI18n();
   const [category, setCategory] = useState<string>("all");
   const [showMine, setShowMine] = useState(false);
   const [newQuestOpen, setNewQuestOpen] = useState(false);
@@ -70,26 +72,26 @@ export function QuestsPage() {
       <Toast message={toast} />
       <header className="flex items-start justify-between">
         <div>
-          <h1 className="font-display text-2xl font-extrabold">🎯 Quest board</h1>
-          <p className="text-sm text-white/50">Pick a quest, do it in real life, submit proof, earn points.</p>
+          <h1 className="font-display text-2xl font-extrabold">🎯 {t("quests.title")}</h1>
+          <p className="text-sm text-white/50">{t("quests.subtitle")}</p>
         </div>
         {isAdmin && (
           <button className="btn-primary shrink-0 !px-3 !py-2 !text-xs" onClick={() => setNewQuestOpen(true)}>
-            + New quest
+            + {t("quests.addQuest")}
           </button>
         )}
       </header>
 
       <div className="grid grid-cols-2 gap-2">
         <button className="btn-primary !py-3" onClick={() => setWheelOpen(true)} disabled={list.length === 0}>
-          🎡 Spin the wheel
+          🎡 {t("quests.title")} spin
         </button>
         <div className="grid grid-cols-3 gap-2">
           <button className="btn-ghost !py-3 !px-2 !text-[11px]" onClick={() => setProposeOpen(true)}>
-            💡 Propose
+            💡 {t("quests.propose")}
           </button>
           <button className="btn-ghost !py-3 !px-2 !text-[11px]" onClick={() => setPlanOpen(true)}>
-            🗓️ Plan
+            🗓️ {t("quests.plan")}
           </button>
           <button className="btn-ghost relative !py-3 !px-2" onClick={() => setProposalsOpen(true)}>
             🗒️
@@ -128,7 +130,7 @@ export function QuestsPage() {
 
       {planned.length > 0 && (
         <section>
-          <h2 className="mb-2 font-display text-lg font-bold text-sky-300">🗓️ Planned ({planned.length})</h2>
+          <h2 className="mb-2 font-display text-lg font-bold text-sky-300">🗓️ {t("quests.planned")} ({planned.length})</h2>
           <div className="space-y-3">
             {planned.map((q) => {
               const diff = difficultyStyle(q.difficulty);
@@ -160,7 +162,7 @@ export function QuestsPage() {
       )}
 
       {list.length === 0 ? (
-        <EmptyState icon="🗺️" title="No quests here" subtitle="Check another category — or ask your admin to add some." />
+        <EmptyState icon="🗺️" title={t("dashboard.noActive")} />
       ) : (
         <div className="space-y-3">
           {list.map((q) => {
@@ -194,7 +196,7 @@ export function QuestsPage() {
                       disabled={!!q.my_status || startQuest.isPending}
                       onClick={() => startQuest.mutate(q.id)}
                     >
-                      {q.my_status ? "Taken" : "Start"}
+                      {q.my_status ? t("quests.started") : t("quests.start")}
                     </button>
                   </div>
                 </div>

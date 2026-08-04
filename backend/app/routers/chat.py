@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,6 +14,18 @@ from ..schemas import ChatIn, ChatMessageOut
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
+STICKERS = [
+    "🔥", "💀", "🥵", "🤡", "😭", "😂", "🥳", "💪", "🍕", "⚡",
+    "😈", "🫡", "🤝", "🦈", "🫠", "🤯", "😤", "🙏", "🚀", "🎯",
+    "😎", "🤌", "🫡", "💯",
+]
+
+
+def _utc(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
 
 def _out(msg: ChatMessage) -> ChatMessageOut:
     return ChatMessageOut(
@@ -23,7 +36,8 @@ def _out(msg: ChatMessage) -> ChatMessageOut:
         user_avatar_file=msg.user.avatar_file,
         recipient_id=msg.recipient_id,
         text=msg.text,
-        created_at=msg.created_at,
+        sticker=msg.sticker,
+        created_at=_utc(msg.created_at),
     )
 
 
@@ -72,8 +86,11 @@ def send_message(
     db: Session = Depends(get_db),
 ):
     squad = get_user_squad(db, user)
-    text = payload.text.strip()
-    if not text:
+    text = (payload.text or "").strip()
+    sticker = payload.sticker or ""
+    if sticker and sticker not in STICKERS:
+        raise HTTPException(status_code=400, detail="Unknown sticker")
+    if not text and not sticker:
         raise HTTPException(status_code=400, detail="Message can't be empty")
     recipient_id = None
     if payload.recipient_id is not None:
@@ -85,7 +102,9 @@ def send_message(
         squad_id=squad.id,
         user_id=user.id,
         recipient_id=recipient_id,
-        text=text,
+        text=text or None,
+        sticker=sticker or None,
+        created_at=datetime.now(timezone.utc),
     )
     db.add(msg)
     db.flush()

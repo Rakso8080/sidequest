@@ -139,7 +139,8 @@ class ChatMessage(Base):
     recipient_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("users.id"), nullable=True
     )
-    text: Mapped[str] = mapped_column(Text)
+    sticker: Mapped[Optional[str]] = mapped_column(String(8), nullable=True)
+    text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=utcnow, server_default=func.now()
     )

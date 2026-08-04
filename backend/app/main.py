@@ -80,7 +80,14 @@ for r in (
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    db = SessionLocal()
+    try:
+        dialect = db.bind.dialect.name if db.bind else "unknown"
+    except Exception:
+        dialect = "unknown"
+    finally:
+        db.close()
+    return {"status": "ok", "db": dialect}
 
 
 # Serve the built frontend (SPA) from the same process when it exists —
@@ -103,7 +110,10 @@ if os.path.isdir(STATIC_DIR):
             ):
                 index = os.path.join(STATIC_DIR, "index.html")
                 if os.path.isfile(index):
-                    return FileResponse(index)
+                    return FileResponse(
+                        index,
+                        headers={"Cache-Control": "no-cache"},
+                    )
             return await call_next(request)
 
     app.add_middleware(SpaFallback)
@@ -115,5 +125,5 @@ if os.path.isdir(STATIC_DIR):
             return FileResponse(candidate)
         index = os.path.join(STATIC_DIR, "index.html")
         if os.path.isfile(index):
-            return FileResponse(index)
+            return FileResponse(index, headers={"Cache-Control": "no-cache"})
         raise HTTPException(status_code=404, detail="Not found")

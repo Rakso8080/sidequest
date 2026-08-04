@@ -142,7 +142,8 @@ export interface ChatMessage {
   user_avatar: string;
   user_avatar_file: string | null;
   recipient_id: number | null;
-  text: string;
+  text: string | null;
+  sticker: string | null;
   created_at: string;
 }
 
@@ -167,6 +168,16 @@ export interface GlobalQuest {
 }
 
 export interface AdminOverview {
+  stats: {
+    users: number;
+    squads: number;
+    template_quests: number;
+    board_quests: number;
+    approved: number;
+    pending: number;
+    week_approved: number;
+    total_points: number;
+  };
   quests: GlobalQuest[];
   users: {
     id: number;

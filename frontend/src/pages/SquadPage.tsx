@@ -5,11 +5,13 @@ import type { Squad } from "../types";
 import { useAuth } from "../store/auth";
 import { Avatar, PageLoader } from "../components/ui";
 import { Toast, useToast } from "../components/modal";
+import { useI18n } from "../lib/i18n";
 
 export function SquadPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { toast, show } = useToast();
+  const { t } = useI18n();
   const [createName, setCreateName] = useState("");
   const [invite, setInvite] = useState("");
   const [copied, setCopied] = useState(false);
@@ -75,17 +77,17 @@ export function SquadPage() {
     return (
       <div className="space-y-5">
         <header className="text-center">
-          <h1 className="font-display text-2xl font-extrabold">👥 Find your squad</h1>
-          <p className="text-sm text-white/50">SideQuest works best with friends.</p>
+          <h1 className="font-display text-2xl font-extrabold">👥 {t("squad.find")}</h1>
+          <p className="text-sm text-white/50">{t("squad.worksWithFriends")}</p>
         </header>
         <Toast message={toast} />
 
         <div className="card space-y-3">
-          <h2 className="font-display font-bold">Create a squad</h2>
+          <h2 className="font-display font-bold">{t("squad.create")}</h2>
           <div className="flex gap-2">
             <input
               className="input"
-              placeholder="Squad name (e.g. The Wolfpack)"
+              placeholder={t("squad.squadName")}
               value={createName}
               onChange={(e) => setCreateName(e.target.value)}
             />
@@ -94,7 +96,7 @@ export function SquadPage() {
               disabled={!createName.trim() || createSquad.isPending}
               onClick={() => createSquad.mutate(createName.trim())}
             >
-              Create
+              {t("squad.create")}
             </button>
           </div>
         </div>
@@ -105,11 +107,11 @@ export function SquadPage() {
         </div>
 
         <div className="card space-y-3">
-          <h2 className="font-display font-bold">Join with invite code</h2>
+          <h2 className="font-display font-bold">{t("squad.join")}</h2>
           <div className="flex gap-2">
             <input
               className="input uppercase"
-              placeholder="XXXXXX"
+              placeholder={t("squad.inviteCode")}
               maxLength={10}
               value={invite}
               onChange={(e) => setInvite(e.target.value.toUpperCase())}
@@ -119,7 +121,7 @@ export function SquadPage() {
               disabled={!invite.trim() || joinSquad.isPending}
               onClick={() => joinSquad.mutate(invite.trim())}
             >
-              Join
+              {t("squad.join")}
             </button>
           </div>
         </div>
@@ -140,13 +142,13 @@ export function SquadPage() {
 
       {/* Invite */}
       <div className="card space-y-2">
-        <div className="text-xs font-bold uppercase tracking-wide text-white/40">Invite friends</div>
+        <div className="text-xs font-bold uppercase tracking-wide text-white/40">{t("squad.invite")}</div>
         <div className="flex items-center gap-2">
           <div className="flex-1 rounded-xl bg-white/5 px-4 py-3 text-center font-display text-2xl font-extrabold tracking-[0.3em] text-fuchsia-300">
             {squad.invite_code}
           </div>
           <button className="btn-ghost shrink-0" onClick={copyCode}>
-            {copied ? "Copied!" : "Copy"}
+            {copied ? t("squad.copied") : t("squad.copy")}
           </button>
         </div>
         {isAdmin && (
@@ -154,14 +156,14 @@ export function SquadPage() {
             className="w-full text-xs font-bold text-white/40 underline-offset-2 hover:underline"
             onClick={() => rotateInvite.mutate()}
           >
-            Regenerate invite code
+            Regenerate
           </button>
         )}
       </div>
 
       {/* Members */}
       <section>
-        <h2 className="mb-2 font-display text-lg font-bold">👥 Members ({squad.members.length})</h2>
+        <h2 className="mb-2 font-display text-lg font-bold">👥 {t("squad.members")} ({squad.members.length})</h2>
         <div className="card divide-y divide-white/5 !p-2">
           {squad.members.map((m) => (
             <div key={m.id} className="flex items-center gap-3 px-2 py-2.5">

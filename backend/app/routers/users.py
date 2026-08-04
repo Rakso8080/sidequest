@@ -22,13 +22,33 @@ def me(user: User = Depends(get_current_user)):
 
 
 @router.patch("/users/me", response_model=UserOut)
-def update_me(payload: UpdateProfileIn, user: User = Depends(get_current_user)):
+def update_me(
+    payload: UpdateProfileIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if payload.display_name is not None:
         user.display_name = payload.display_name.strip() or user.display_name
+    if payload.username is not None:
+        new_name = payload.username.strip().lower()
+        if not new_name:
+            raise HTTPException(status_code=400, detail="Username can't be empty")
+        if len(new_name) < 2:
+            raise HTTPException(status_code=400, detail="Username too short")
+        exists = (
+            db.query(User)
+            .filter(User.username == new_name, User.id != user.id)
+            .first()
+        )
+        if exists:
+            raise HTTPException(status_code=409, detail="Username already taken")
+        user.username = new_name
     if payload.avatar is not None:
         user.avatar = payload.avatar.strip() or user.avatar
     if payload.bio is not None:
         user.bio = payload.bio
+    db.add(user)
+    db.commit()
     return user
 
 

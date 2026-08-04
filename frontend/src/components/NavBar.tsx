@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../store/auth";
 import { api } from "../api/client";
 import type { ChatMessage } from "../types";
+import { useI18n } from "../lib/i18n";
 
 const SEEN_KEY = "sq_chat_seen";
 
@@ -13,15 +14,17 @@ export function markChatSeen(id: number) {
   if (id > chatLastSeen()) localStorage.setItem(SEEN_KEY, String(id));
 }
 
-const tabs = [
-  { to: "/", label: "Home", icon: "🏠" },
-  { to: "/quests", label: "Quests", icon: "🎯" },
-  { to: "/recap", label: "Recap", icon: "🎬" },
-  { to: "/chat", label: "Chat", icon: "💬" },
-  { to: "/leaderboard", label: "Ranks", icon: "🏆" },
-  { to: "/squad", label: "Squad", icon: "👥" },
-  { to: "/profile", label: "You", icon: "🙋" },
-];
+function tabDefs(t: (k: string) => string) {
+  return [
+    { to: "/", label: t("nav.home"), icon: "🏠" },
+    { to: "/quests", label: t("nav.quests"), icon: "🎯" },
+    { to: "/recap", label: t("nav.recap"), icon: "🎬" },
+    { to: "/chat", label: t("nav.chat"), icon: "💬" },
+    { to: "/leaderboard", label: t("nav.ranks"), icon: "🏆" },
+    { to: "/squad", label: t("nav.squad"), icon: "👥" },
+    { to: "/profile", label: t("nav.you"), icon: "🙋" },
+  ];
+}
 
 function useChatUnread() {
   const { user } = useAuth();
@@ -54,6 +57,8 @@ function useChatUnread() {
 
 export function NavBar() {
   const unread = useChatUnread();
+  const { t } = useI18n();
+  const tabs = tabDefs(t);
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink/90 backdrop-blur-lg pb-[env(safe-area-inset-bottom)]">
       <div className="mx-auto flex max-w-md items-stretch justify-between px-1.5">

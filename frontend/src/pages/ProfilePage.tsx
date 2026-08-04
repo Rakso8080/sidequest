@@ -10,14 +10,17 @@ import { Toast, useToast } from "../components/modal";
 import { AVATARS } from "../lib/format";
 import { sfx } from "../lib/sound";
 import { useInstallPrompt } from "../lib/pwa";
+import { LANGS, useI18n } from "../lib/i18n";
 
 export function ProfilePage() {
   const { user, setUser } = useAuth();
   const qc = useQueryClient();
   const { toast, show } = useToast();
+  const { t, lang, setLang } = useI18n();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     display_name: user?.display_name ?? "",
+    username: user?.username ?? "",
     bio: user?.bio ?? "",
     avatar: user?.avatar ?? "😎",
   });
@@ -45,9 +48,9 @@ export function ProfilePage() {
       setUser(u);
       setEditing(false);
       qc.invalidateQueries();
-      show("Profile updated ✅");
+      show(t("profile.updated"));
     },
-    onError: (err: any) => show(err.message || "Failed to save"),
+    onError: (err: any) => show(err.message || t("profile.saveFailed")),
   });
 
   const uploadAvatar = useMutation({
@@ -59,9 +62,9 @@ export function ProfilePage() {
     onSuccess: (u) => {
       setUser(u);
       qc.invalidateQueries();
-      show("Profile photo updated 📸");
+      show(t("profile.photoUpdated"));
     },
-    onError: (err: any) => show(err.message || "Upload failed"),
+    onError: (err: any) => show(err.message || t("profile.saveFailed")),
   });
 
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -111,7 +114,7 @@ export function ProfilePage() {
 
       {/* Badges */}
       <section>
-        <h2 className="mb-2 font-display text-lg font-bold">🎖️ Badges</h2>
+        <h2 className="mb-2 font-display text-lg font-bold">🎖️ {t("profile.badges")}</h2>
         <div className="flex flex-wrap gap-2">
           {stats.badges.map((b) => (
             <div key={b.key} className="card flex items-center gap-2 !p-2.5">
@@ -124,19 +127,19 @@ export function ProfilePage() {
 
       {/* Stats */}
       <section className="card space-y-3">
-        <h2 className="font-display text-lg font-bold">📊 Progress</h2>
+        <h2 className="font-display text-lg font-bold">📊 {t("profile.progress")}</h2>
         <div>
           <div className="mb-1 flex justify-between text-xs font-bold text-white/50">
-            <span>Completion rate</span>
+            <span>{t("profile.completionRate")}</span>
             <span className="text-fuchsia-300">{stats.completion_rate}%</span>
           </div>
           <ProgressBar value={stats.completion_rate} />
         </div>
         <div className="grid grid-cols-3 gap-2 text-center">
           {[
-            { v: stats.quests_completed, l: "Completed" },
-            { v: stats.quests_pending, l: "In progress" },
-            { v: stats.quests_rejected, l: "Failed" },
+            { v: stats.quests_completed, l: t("profile.completed") },
+            { v: stats.quests_pending, l: t("profile.inProgress") },
+            { v: stats.quests_rejected, l: t("profile.failed") },
           ].map((x) => (
             <div key={x.l} className="rounded-xl bg-white/5 py-2.5">
               <div className="font-display text-lg font-extrabold">{x.v}</div>
@@ -146,18 +149,18 @@ export function ProfilePage() {
         </div>
         {stats.favorite_category && (
           <div className="text-center text-xs font-bold text-white/50">
-            Favorite category: <span className="text-amber-300">{stats.favorite_category}</span>
+            {t("profile.favorite")}: <span className="text-amber-300">{stats.favorite_category}</span>
           </div>
         )}
       </section>
 
       {/* Settings */}
       <section className="card space-y-3">
-        <h2 className="font-display text-lg font-bold">⚙️ Settings</h2>
+        <h2 className="font-display text-lg font-bold">⚙️ {t("profile.settings")}</h2>
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-bold">Sound effects</div>
-            <div className="text-xs text-white/40">Ticks, dings, and victory jingles</div>
+            <div className="text-sm font-bold">{t("profile.sound")}</div>
+            <div className="text-xs text-white/40">{t("profile.soundHint")}</div>
           </div>
           <button
             className={`h-9 w-16 rounded-full p-1 transition ${soundOn ? "bg-emerald-500" : "bg-white/10"}`}
@@ -172,20 +175,40 @@ export function ProfilePage() {
             <div className={`h-7 w-7 rounded-full bg-white transition ${soundOn ? "translate-x-7" : ""}`} />
           </button>
         </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm font-bold">{t("profile.language")}</div>
+            <div className="text-xs text-white/40">{t("nav.you")}</div>
+          </div>
+          <div className="flex gap-1 rounded-full bg-white/5 p-1">
+            {LANGS.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => setLang(l.code)}
+                title={l.label}
+                className={`rounded-full px-2 py-1 text-xs font-bold transition ${
+                  lang === l.code ? "bg-violet-500/40 text-white" : "text-white/50"
+                }`}
+              >
+                {l.flag}
+              </button>
+            ))}
+          </div>
+        </div>
         {canInstall && (
           <button className="btn-primary w-full" onClick={install}>
-            📲 Install the app
+            📲 {t("profile.install")}
           </button>
         )}
         <Link to="/admin" className="btn-ghost w-full">
-          🛠️ Admin panel
+          🛠️ {t("profile.admin")}
         </Link>
       </section>
 
       {/* Punishments */}
       {punishments && punishments.length > 0 && (
         <section>
-          <h2 className="mb-2 font-display text-lg font-bold text-rose-300">🧨 My punishments</h2>
+          <h2 className="mb-2 font-display text-lg font-bold text-rose-300">🧨 {t("profile.myPunishments")}</h2>
           <div className="space-y-2">
             {punishments.map((p) => (
               <div key={p.id} className="card flex items-center gap-3 !p-3.5">
@@ -213,9 +236,9 @@ export function ProfilePage() {
 
       {/* My submissions */}
       <section>
-        <h2 className="mb-2 font-display text-lg font-bold">🗂️ My quests</h2>
+        <h2 className="mb-2 font-display text-lg font-bold">🗂️ {t("profile.myQuests")}</h2>
         {!subs || subs.length === 0 ? (
-          <EmptyState icon="🌱" title="Nothing here yet" subtitle="Head to the quest board and start your first quest." />
+          <EmptyState icon="🌱" title={t("profile.nothingHere")} subtitle={t("profile.goToBoard")} />
         ) : (
           <div className="space-y-3">
             {subs.map((s) => (
@@ -230,22 +253,28 @@ export function ProfilePage() {
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setEditing(false)} />
           <div className="relative z-10 w-full max-w-lg animate-slide-up rounded-t-3xl bg-panel p-5 sm:rounded-3xl">
-            <h2 className="mb-4 font-display text-xl font-bold">Edit profile</h2>
+            <h2 className="mb-4 font-display text-xl font-bold">{t("profile.editProfile")}</h2>
             <div className="space-y-3">
               <input
                 className="input"
-                placeholder="Display name"
+                placeholder={t("auth.displayName")}
                 value={form.display_name}
                 onChange={(e) => setForm({ ...form, display_name: e.target.value })}
               />
+              <input
+                className="input"
+                placeholder={t("profile.username")}
+                value={form.username}
+                onChange={(e) => setForm({ ...form, username: e.target.value })}
+              />
               <textarea
                 className="input min-h-16 resize-none"
-                placeholder="Bio"
+                placeholder={t("profile.bio")}
                 value={form.bio}
                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
               />
               <div>
-                <div className="mb-1.5 text-xs font-bold text-white/50">Profile photo</div>
+                <div className="mb-1.5 text-xs font-bold text-white/50">{t("profile.profilePhoto")}</div>
                 <input
                   ref={fileRef}
                   type="file"
@@ -258,9 +287,9 @@ export function ProfilePage() {
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
                 >
-                  {uploading ? "Uploading…" : "📷 Upload a photo"}
+                  {uploading ? t("profile.uploading") : `📷 ${t("profile.uploadPhoto")}`}
                 </button>
-                <div className="mb-1.5 text-xs font-bold text-white/50">Or pick an emoji</div>
+                <div className="mb-1.5 text-xs font-bold text-white/50">{t("profile.pickEmoji")}</div>
                 <div className="grid grid-cols-8 gap-1">
                   {AVATARS.map((a) => (
                     <button
@@ -277,10 +306,10 @@ export function ProfilePage() {
               </div>
               <div className="flex gap-2">
                 <button className="btn-ghost flex-1" onClick={() => setEditing(false)}>
-                  Cancel
+                  {t("profile.cancel")}
                 </button>
                 <button className="btn-primary flex-1" onClick={() => saveProfile.mutate()} disabled={saveProfile.isPending}>
-                  Save
+                  {t("profile.save")}
                 </button>
               </div>
             </div>

@@ -6,8 +6,10 @@ import { assetUrl } from "../lib/format";
 import { PageLoader, EmptyState } from "../components/ui";
 import { sfx } from "../lib/sound";
 import { generateRecapVideo } from "../lib/recap";
+import { useI18n } from "../lib/i18n";
 
 export function RecapPage() {
+  const { t } = useI18n();
   const { data, isLoading } = useQuery<Recap>({
     queryKey: ["recap"],
     queryFn: () => api.get("/recap"),
@@ -35,7 +37,7 @@ export function RecapPage() {
       sfx.success();
     } catch (err: any) {
       sfx.error();
-      setError(err?.message || "Couldn't generate the video");
+      setError(err?.message || t("recap.generating"));
     } finally {
       setGenerating(false);
     }
@@ -46,11 +48,8 @@ export function RecapPage() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="font-display text-2xl font-extrabold">🎬 Squad recap</h1>
-        <p className="text-sm text-white/50">
-          Every approved quest photo, in one place. After a full year of SideQuest, this becomes your recap video —
-          but you can generate it anytime.
-        </p>
+        <h1 className="font-display text-2xl font-extrabold">🎬 {t("recap.title")}</h1>
+        <p className="text-sm text-white/50">{t("recap.subtitle")}</p>
       </header>
 
       <button

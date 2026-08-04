@@ -3,8 +3,10 @@ import { api } from "../api/client";
 import type { LeaderboardEntry } from "../types";
 import { Avatar, PageLoader } from "../components/ui";
 import { RANK_EMOJI } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 
 export function LeaderboardPage() {
+  const { t } = useI18n();
   const { data, isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ["leaderboard"],
     queryFn: () => api.get("/leaderboard"),
@@ -16,8 +18,8 @@ export function LeaderboardPage() {
   return (
     <div className="space-y-4">
       <header className="text-center">
-        <h1 className="font-display text-2xl font-extrabold">🏆 Squad ranks</h1>
-        <p className="text-sm text-white/50">Live points, eternal glory. Mostly points.</p>
+        <h1 className="font-display text-2xl font-extrabold">🏆 {t("leaderboard.title")}</h1>
+        <p className="text-sm text-white/50">{t("leaderboard.subtitle")}</p>
       </header>
 
       <div className="card !p-2">

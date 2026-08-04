@@ -7,23 +7,31 @@ import { Avatar, EmptyState, PageLoader } from "../components/ui";
 import { markChatSeen } from "../components/NavBar";
 import { sfx } from "../lib/sound";
 import { timeAgo } from "../lib/format";
+import { useI18n } from "../lib/i18n";
+
+const STICKERS = [
+  "🔥", "💀", "🥵", "🤡", "😭", "😂", "🥳", "💪", "🍕", "⚡",
+  "😈", "🫡", "🤝", "🦈", "🫠", "🤯", "😤", "🙏", "🚀", "🎯",
+  "😎", "🤌", "🫡", "💯",
+];
 
 function ChatHeader({ onNewChat }: { onNewChat: () => void }) {
+  const { t } = useI18n();
   return (
     <div className="flex items-center gap-3">
       <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/30 to-fuchsia-500/20 text-xl ring-1 ring-white/15">
         💬
       </div>
       <div className="flex-1">
-        <div className="font-display text-lg font-extrabold leading-tight">Messages</div>
-        <div className="text-xs text-white/40">Squad chat + direct messages</div>
+        <div className="font-display text-lg font-extrabold leading-tight">{t("chat.squadChat")}</div>
+        <div className="text-xs text-white/40">{t("chat.direct")}</div>
       </div>
       <button
         onClick={onNewChat}
         className="btn-primary !rounded-full !px-4 !py-2 !text-xs"
-        title="New message"
+        title={t("chat.new")}
       >
-        ✏️ New
+        ✏️ {t("chat.new")}
       </button>
     </div>
   );
@@ -43,7 +51,7 @@ function ChannelChip({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${
+      className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${
         active ? "bg-fuchsia-500/30 text-fuchsia-100 ring-1 ring-fuchsia-400/40" : "bg-white/5 text-white/50 hover:bg-white/10"
       }`}
     >
@@ -56,10 +64,12 @@ function ChannelChip({
 export function ChatPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { t } = useI18n();
   const [text, setText] = useState("");
   const [withUserId, setWithUserId] = useState<number | null>(null);
   const [withUser, setWithUser] = useState<UserSearchResult | null>(null);
   const [showSearch, setShowSearch] = useState(false);
+  const [showStickers, setShowStickers] = useState(false);
   const [query, setQuery] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -77,7 +87,7 @@ export function ChatPage() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, showStickers]);
 
   useEffect(() => {
     if (messages && messages.length > 0 && !withUserId) {
@@ -86,14 +96,18 @@ export function ChatPage() {
   }, [messages, withUserId]);
 
   const send = useMutation({
-    mutationFn: async (msg: string) => {
-      const created = await api.post<ChatMessage>("/chat", { text: msg, recipient_id: withUserId });
+    mutationFn: async (msg: { text?: string; sticker?: string }) => {
+      const created = await api.post<ChatMessage>("/chat", {
+        ...msg,
+        recipient_id: withUserId,
+      });
       qc.setQueryData<ChatMessage[]>(["chat", withUserId], (old = []) => [...old, created]);
       return created;
     },
     onSuccess: () => {
       sfx.whoosh();
       setText("");
+      setShowStickers(false);
     },
     onError: (err: any) => {
       sfx.error();
@@ -103,9 +117,9 @@ export function ChatPage() {
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const t = text.trim();
-    if (!t || send.isPending) return;
-    send.mutate(t);
+    const msg = text.trim();
+    if (!msg || send.isPending) return;
+    send.mutate({ text: msg });
   }
 
   function openDm(c: UserSearchResult) {
@@ -117,6 +131,10 @@ export function ChatPage() {
 
   if (isLoading || !messages) return <PageLoader />;
 
+  const placeholder = withUserId
+    ? t("chat.messageDm", { name: withUser?.display_name ?? "…" })
+    : t("chat.messageSquad");
+
   return (
     <div className="flex h-[calc(100vh-7rem)] flex-col">
       <div className="mb-3">
@@ -124,7 +142,7 @@ export function ChatPage() {
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
           <ChannelChip
             active={withUserId === null}
-            label="Squad"
+            label={t("nav.squad")}
             icon="👥"
             onClick={() => {
               setWithUserId(null);
@@ -149,8 +167,8 @@ export function ChatPage() {
         {messages.length === 0 ? (
           <EmptyState
             icon="💬"
-            title={withUserId ? "No messages yet" : "No messages yet"}
-            subtitle={withUserId ? "Say hi 👋" : "Hype, roast, and plan together."}
+            title={t("chat.noSquad")}
+            subtitle={withUserId ? t("chat.sayHi") : t("chat.direct")}
           />
         ) : (
           <>
@@ -161,20 +179,22 @@ export function ChatPage() {
                   {!mine && <Avatar emoji={m.user_avatar} file={m.user_avatar_file} size="sm" />}
                   <div className={`max-w-[75%] ${mine ? "text-right" : ""}`}>
                     {!mine && (
-                      <div className="mb-0.5 text-[10px] font-bold text-white/35">
-                        {withUserId ? m.user_name : m.user_name}
+                      <div className="mb-0.5 text-[10px] font-bold text-white/35">{m.user_name}</div>
+                    )}
+                    {m.sticker ? (
+                      <div className={`text-5xl ${mine ? "" : ""}`}>{m.sticker}</div>
+                    ) : (
+                      <div
+                        className={`inline-block rounded-2xl px-3 py-2 text-left text-sm leading-relaxed ${
+                          mine
+                            ? "rounded-br-sm bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-fuchsia-500/20"
+                            : "rounded-bl-sm bg-white/10"
+                        }`}
+                      >
+                        {m.text}
                       </div>
                     )}
-                    <div
-                      className={`inline-block rounded-2xl px-3 py-2 text-left text-sm leading-relaxed ${
-                        mine
-                          ? "rounded-br-sm bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-fuchsia-500/20"
-                          : "rounded-bl-sm bg-white/10"
-                      }`}
-                    >
-                      {m.text}
-                    </div>
-                    <div className={`mt-0.5 text-[9px] text-white/30 ${mine ? "" : ""}`}>{timeAgo(m.created_at)}</div>
+                    <div className="mt-0.5 text-[9px] text-white/30">{timeAgo(m.created_at)}</div>
                   </div>
                 </div>
               );
@@ -184,10 +204,35 @@ export function ChatPage() {
         )}
       </div>
 
-      <form onSubmit={submit} className="mt-3 flex items-end gap-2">
+      {showStickers && (
+        <div className="mt-2 grid grid-cols-8 gap-1 rounded-2xl bg-white/5 p-2">
+          {STICKERS.map((s) => (
+            <button
+              key={s}
+              onClick={() => send.mutate({ sticker: s })}
+              disabled={send.isPending}
+              className="rounded-xl py-1 text-3xl transition hover:bg-white/10 active:scale-90"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <form onSubmit={submit} className="mt-2 flex items-end gap-2">
+        <button
+          type="button"
+          onClick={() => setShowStickers((v) => !v)}
+          className={`shrink-0 rounded-full px-3 py-2.5 text-lg transition ${
+            showStickers ? "bg-fuchsia-500/30" : "bg-white/5 hover:bg-white/10"
+          }`}
+          title={t("chat.stickers")}
+        >
+          😀
+        </button>
         <input
           className="input flex-1 !rounded-full"
-          placeholder={`Message ${withUserId ? (withUser?.display_name ?? "…") : "the squad"}…`}
+          placeholder={placeholder}
           value={text}
           maxLength={2000}
           onChange={(e) => setText(e.target.value)}
@@ -196,7 +241,7 @@ export function ChatPage() {
           type="submit"
           className="btn-primary shrink-0 !rounded-full !px-5"
           disabled={!text.trim() || send.isPending}
-          aria-label="Send"
+          aria-label={t("chat.send")}
         >
           ➤
         </button>
@@ -207,21 +252,21 @@ export function ChatPage() {
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowSearch(false)} />
           <div className="relative z-10 flex max-h-[80vh] w-full max-w-lg animate-slide-up flex-col rounded-t-3xl bg-panel p-5 sm:rounded-3xl">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-display text-xl font-bold">✉️ New message</h2>
+              <h2 className="font-display text-xl font-bold">✉️ {t("chat.newMessage")}</h2>
               <button className="btn-ghost !px-2 !py-1 !text-xs" onClick={() => setShowSearch(false)}>
-                Close
+                {t("chat.close")}
               </button>
             </div>
             <input
               className="input w-full"
-              placeholder="Search people…"
+              placeholder={t("chat.searchPeople")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               autoFocus
             />
             <div className="mt-3 flex-1 space-y-1 overflow-y-auto">
               {!contacts || contacts.length === 0 ? (
-                <EmptyState icon="🔍" title="No one found" subtitle="Search by name or username." />
+                <EmptyState icon="🔍" title={t("chat.noOneFound")} subtitle={t("chat.searchHint")} />
               ) : (
                 contacts.map((c) => (
                   <button
