@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { Punishment, Stats, Submission, User } from "../types";
@@ -20,6 +21,8 @@ export function ProfilePage() {
     bio: user?.bio ?? "",
     avatar: user?.avatar ?? "😎",
   });
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: stats } = useQuery<Stats>({
     queryKey: ["stats"],
@@ -47,6 +50,29 @@ export function ProfilePage() {
     onError: (err: any) => show(err.message || "Failed to save"),
   });
 
+  const uploadAvatar = useMutation({
+    mutationFn: async (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return api.postForm<User>("/users/me/avatar", fd);
+    },
+    onSuccess: (u) => {
+      setUser(u);
+      qc.invalidateQueries();
+      show("Profile photo updated 📸");
+    },
+    onError: (err: any) => show(err.message || "Upload failed"),
+  });
+
+  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    await uploadAvatar.mutateAsync(file);
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
   const completePunishment = useMutation({
     mutationFn: (id: number) => api.post(`/punishments/${id}/complete`),
     onSuccess: () => {
@@ -64,7 +90,7 @@ export function ProfilePage() {
       <header className="card relative overflow-hidden">
         <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-fuchsia-500/20 blur-2xl" />
         <div className="flex items-center gap-4">
-          <Avatar emoji={user.avatar} size="xl" />
+          <Avatar emoji={user.avatar} file={user.avatar_file} size="xl" />
           <div className="flex-1">
             <h1 className="font-display text-2xl font-extrabold">{user.display_name}</h1>
             <div className="text-sm text-white/50">@{user.username}</div>
@@ -151,6 +177,9 @@ export function ProfilePage() {
             📲 Install the app
           </button>
         )}
+        <Link to="/admin" className="btn-ghost w-full">
+          🛠️ Admin panel
+        </Link>
       </section>
 
       {/* Punishments */}
@@ -216,7 +245,22 @@ export function ProfilePage() {
                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
               />
               <div>
-                <div className="mb-1.5 text-xs font-bold text-white/50">Avatar</div>
+                <div className="mb-1.5 text-xs font-bold text-white/50">Profile photo</div>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={onPickFile}
+                />
+                <button
+                  className="btn-ghost mb-2 w-full !text-xs"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? "Uploading…" : "📷 Upload a photo"}
+                </button>
+                <div className="mb-1.5 text-xs font-bold text-white/50">Or pick an emoji</div>
                 <div className="grid grid-cols-8 gap-1">
                   {AVATARS.map((a) => (
                     <button

@@ -4,6 +4,7 @@ export interface User {
   username: string;
   display_name: string;
   avatar: string;
+  avatar_file: string | null;
   bio: string;
   squad_id: number | null;
   total_points: number;
@@ -31,6 +32,7 @@ export interface Member {
   display_name: string;
   username: string;
   avatar: string;
+  avatar_file: string | null;
   bio: string;
   total_points: number;
   streak: number;
@@ -96,6 +98,7 @@ export interface Submission {
   user_id: number;
   user_name: string;
   user_avatar: string;
+  user_avatar_file: string | null;
   status: "in_progress" | "pending" | "approved" | "rejected" | "expired";
   proof_text: string;
   proof_file: string | null;
@@ -116,6 +119,7 @@ export interface Punishment {
   user_id: number;
   user_name: string;
   user_avatar: string;
+  user_avatar_file: string | null;
   description: string;
   status: "assigned" | "completed" | "overdue";
   due_date: string;
@@ -136,8 +140,54 @@ export interface ChatMessage {
   user_id: number;
   user_name: string;
   user_avatar: string;
+  user_avatar_file: string | null;
+  recipient_id: number | null;
   text: string;
   created_at: string;
+}
+
+export interface UserSearchResult {
+  id: number;
+  display_name: string;
+  username: string;
+  avatar: string;
+  avatar_file: string | null;
+  squad_name: string | null;
+}
+
+export interface GlobalQuest {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  difficulty: "easy" | "medium" | "hard";
+  points: number;
+  proof_type: "photo" | "video" | "text" | "self_report";
+  time_limit_hours: number;
+}
+
+export interface AdminOverview {
+  quests: GlobalQuest[];
+  users: {
+    id: number;
+    display_name: string;
+    username: string;
+    email: string;
+    avatar: string;
+    avatar_file: string | null;
+    total_points: number;
+    streak: number;
+    squad_id: number | null;
+    created_at: string;
+  }[];
+  squads: {
+    id: number;
+    name: string;
+    invite_code: string;
+    admin_id: number;
+    member_count: number;
+    created_at: string;
+  }[];
 }
 
 export interface LeaderboardEntry {
@@ -145,6 +195,7 @@ export interface LeaderboardEntry {
   user_id: number;
   display_name: string;
   avatar: string;
+  avatar_file: string | null;
   total_points: number;
   streak: number;
   quests_completed: number;
@@ -188,6 +239,7 @@ export interface RecapItem {
   created_at: string | null;
   user_name: string;
   user_avatar: string;
+  user_avatar_file: string | null;
 }
 
 export interface Recap {

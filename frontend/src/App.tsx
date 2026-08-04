@@ -12,6 +12,7 @@ import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { SquadPage } from "./pages/SquadPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { NotificationsPage } from "./pages/NotificationsPage";
+import AdminPage from "./pages/AdminPage";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loaded } = useAuth();
@@ -112,6 +113,14 @@ export default function App() {
             <SquadRequired>
               <NotificationsPage />
             </SquadRequired>
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <Protected>
+            <AdminPage />
           </Protected>
         }
       />

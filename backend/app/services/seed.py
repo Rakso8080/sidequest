@@ -14,33 +14,83 @@ from .settings import DEFAULT_SETTINGS
 from .storage import save_upload
 
 DEFAULT_QUESTS: List[Dict] = [
-    {"title": "Morning run 5k", "description": "Run 5km before noon and log your time.", "category": "Fitness", "difficulty": "medium", "points": 60, "proof_type": "photo", "time_limit_hours": 24},
-    {"title": "100 pushups in a day", "description": "Accumulate 100 pushups over the day.", "category": "Fitness", "difficulty": "hard", "points": 80, "proof_type": "video", "time_limit_hours": 24},
-    {"title": "Gym session + photo", "description": "Do a full workout and snap the post-sweat pic.", "category": "Fitness", "difficulty": "easy", "points": 40, "proof_type": "photo", "time_limit_hours": 48},
-    {"title": "Cold shower challenge", "description": "A full cold shower. Optional screaming.", "category": "Fitness", "difficulty": "easy", "points": 30, "proof_type": "text", "time_limit_hours": 24},
-    {"title": "Dinner with a friend", "description": "Catch up with someone you haven't seen in a month+.", "category": "Social", "difficulty": "easy", "points": 40, "proof_type": "photo", "time_limit_hours": 168},
-    {"title": "Invite the squad for game night", "description": "Host a game or movie night for the group.", "category": "Social", "difficulty": "medium", "points": 70, "proof_type": "photo", "time_limit_hours": 168},
-    {"title": "Call a family member", "description": "Call someone in your family you've neglected.", "category": "Social", "difficulty": "easy", "points": 30, "proof_type": "self_report", "time_limit_hours": 48},
-    {"title": "Draw something for a squadmate", "description": "Draw or paint something for another member.", "category": "Creativity", "difficulty": "medium", "points": 50, "proof_type": "photo", "time_limit_hours": 72},
-    {"title": "Write a short story", "description": "Write a 300-word story. Any genre.", "category": "Creativity", "difficulty": "medium", "points": 55, "proof_type": "text", "time_limit_hours": 72},
-    {"title": "Learn a magic trick", "description": "Learn and record a magic trick for the squad.", "category": "Creativity", "difficulty": "hard", "points": 75, "proof_type": "video", "time_limit_hours": 168},
-    {"title": "Explore a new neighborhood", "description": "Go somewhere you've never been and document it.", "category": "Adventure", "difficulty": "medium", "points": 60, "proof_type": "photo", "time_limit_hours": 168},
-    {"title": "Sunrise hike", "description": "Catch the sunrise from a viewpoint.", "category": "Adventure", "difficulty": "hard", "points": 90, "proof_type": "photo", "time_limit_hours": 72},
-    {"title": "Read 30 pages", "description": "Read 30 pages of a book, share your favorite line.", "category": "Mind/Skill", "difficulty": "easy", "points": 35, "proof_type": "text", "time_limit_hours": 72},
-    {"title": "Learn 20 new words", "description": "Learn 20 words of a new language, teach the squad one.", "category": "Mind/Skill", "difficulty": "medium", "points": 45, "proof_type": "text", "time_limit_hours": 72},
-    {"title": "Meditate 7 days", "description": "Meditate at least 10 minutes daily for a week.", "category": "Mind/Skill", "difficulty": "hard", "points": 85, "proof_type": "self_report", "time_limit_hours": 168},
-    {"title": "Do a random act of kindness", "description": "Do something kind for a stranger, document it.", "category": "Kindness", "difficulty": "easy", "points": 45, "proof_type": "photo", "time_limit_hours": 48},
-    {"title": "Volunteer for an afternoon", "description": "Volunteer somewhere local for 2+ hours.", "category": "Kindness", "difficulty": "hard", "points": 100, "proof_type": "photo", "time_limit_hours": 168},
-    {"title": "Say hi to a stranger", "description": "Have a real conversation with a stranger.", "category": "Kindness", "difficulty": "easy", "points": 25, "proof_type": "self_report", "time_limit_hours": 24},
-    {"title": "Eat something weird", "description": "Try a food you've never dared to eat.", "category": "Wildcard", "difficulty": "medium", "points": 50, "proof_type": "photo", "time_limit_hours": 72},
-    {"title": "24h digital detox", "description": "No screens for 24 hours. Painful but glorious.", "category": "Wildcard", "difficulty": "hard", "points": 95, "proof_type": "self_report", "time_limit_hours": 168},
-    {"title": "Dance like nobody's watching", "description": "Film 30s of your best (worst) dancing.", "category": "Wildcard", "difficulty": "easy", "points": 30, "proof_type": "video", "time_limit_hours": 24},
+    # Social / guts — the brutal ones
+    {"title": "Ask for her Snap", "description": "Walk up to a girl you don't know and ask for her Snap. Screenshot the conversation as proof.", "category": "Social", "difficulty": "hard", "points": 100, "proof_type": "photo", "time_limit_hours": 72},
+    {"title": "Ask someone out", "description": "Ask your crush out. The answer doesn't matter — screenshot it either way.", "category": "Social", "difficulty": "hard", "points": 100, "proof_type": "photo", "time_limit_hours": 72},
+    {"title": "Rejection collection ×3", "description": "Get rejected 3 times on purpose. Ask strangers for absurd things and log every no.", "category": "Social", "difficulty": "hard", "points": 100, "proof_type": "photo", "time_limit_hours": 168},
+    {"title": "Talk to 3 strangers", "description": "Have a real conversation with 3 strangers in one day. Start every one yourself.", "category": "Social", "difficulty": "hard", "points": 90, "proof_type": "photo", "time_limit_hours": 48},
+    {"title": "Join a stranger group", "description": "Walk up to a group of strangers and join their conversation for 5 minutes.", "category": "Social", "difficulty": "hard", "points": 95, "proof_type": "self_report", "time_limit_hours": 72},
+    {"title": "Send the bold DM", "description": "Send that DM you've been too scared to send. Screenshot it.", "category": "Social", "difficulty": "medium", "points": 70, "proof_type": "photo", "time_limit_hours": 48},
+    {"title": "Dance-off vs a stranger", "description": "Challenge a stranger to a dance-off in public and record it.", "category": "Social", "difficulty": "hard", "points": 90, "proof_type": "video", "time_limit_hours": 72},
+    {"title": "Compliment a stranger out loud", "description": "Give a stranger a genuine compliment, in public, out loud.", "category": "Social", "difficulty": "easy", "points": 40, "proof_type": "self_report", "time_limit_hours": 24},
+    {"title": "Ask for a discount", "description": "Ask for a discount somewhere you'd never dare. Accept any outcome.", "category": "Social", "difficulty": "easy", "points": 40, "proof_type": "self_report", "time_limit_hours": 48},
+    # Fitness / physical — the brutal ones
+    {"title": "100 burpees", "description": "100 burpees in one session. Film it or it didn't happen.", "category": "Fitness", "difficulty": "hard", "points": 90, "proof_type": "video", "time_limit_hours": 48},
+    {"title": "50 pushups straight", "description": "50 clean pushups without stopping, on camera.", "category": "Fitness", "difficulty": "hard", "points": 80, "proof_type": "video", "time_limit_hours": 48},
+    {"title": "10k run", "description": "Run 10km. Log your time.", "category": "Fitness", "difficulty": "hard", "points": 90, "proof_type": "photo", "time_limit_hours": 72},
+    {"title": "PR at the gym", "description": "Beat your personal best on squat, bench or deadlift. Photo of the bar.", "category": "Fitness", "difficulty": "medium", "points": 70, "proof_type": "photo", "time_limit_hours": 72},
+    {"title": "20 pull-ups in a day", "description": "20 pull-ups before the day ends. Video proof.", "category": "Fitness", "difficulty": "hard", "points": 80, "proof_type": "video", "time_limit_hours": 24},
+    {"title": "5 min plank", "description": "Hold a plank until you shake — minimum 5 minutes on camera.", "category": "Fitness", "difficulty": "hard", "points": 75, "proof_type": "video", "time_limit_hours": 72},
+    {"title": "Handstand 30 seconds", "description": "Hold a handstand for 30 seconds, on camera.", "category": "Fitness", "difficulty": "hard", "points": 80, "proof_type": "video", "time_limit_hours": 72},
+    {"title": "One-armed pushups", "description": "10 one-armed pushups. Video or it didn't happen.", "category": "Fitness", "difficulty": "hard", "points": 85, "proof_type": "video", "time_limit_hours": 72},
+    {"title": "Sprint the steepest hill", "description": "Sprint up the steepest hill you can find. Photo of the view + time.", "category": "Fitness", "difficulty": "medium", "points": 65, "proof_type": "photo", "time_limit_hours": 72},
+    {"title": "400m sprint", "description": "Sprint 400m and film the finish.", "category": "Fitness", "difficulty": "medium", "points": 60, "proof_type": "video", "time_limit_hours": 48},
+    {"title": "Pushups every hour", "description": "10 pushups every hour for 12 straight hours. Photo-log each hour.", "category": "Fitness", "difficulty": "hard", "points": 85, "proof_type": "photo", "time_limit_hours": 24},
+    {"title": "Flip a tractor tire", "description": "Flip a heavy tractor tire 10 times. Video.", "category": "Fitness", "difficulty": "hard", "points": 85, "proof_type": "video", "time_limit_hours": 72},
+    {"title": "5 AM gym week", "description": "Train at 6 AM every day for a week. One photo per session.", "category": "Fitness", "difficulty": "hard", "points": 95, "proof_type": "photo", "time_limit_hours": 168},
+    {"title": "Climbing gym", "description": "First time at a climbing gym, or send a route one grade above yours. Photo at the top.", "category": "Adventure", "difficulty": "medium", "points": 65, "proof_type": "photo", "time_limit_hours": 72},
+    {"title": "Sleep outside", "description": "Camp out one night — tent or under the stars. Photo at night + morning.", "category": "Adventure", "difficulty": "medium", "points": 70, "proof_type": "photo", "time_limit_hours": 72},
+    {"title": "Join a pickup game", "description": "Join a strangers' football or basketball pickup game. Photo/video.", "category": "Adventure", "difficulty": "medium", "points": 60, "proof_type": "photo", "time_limit_hours": 72},
+    {"title": "Polar plunge", "description": "Jump into freezing water. Full send, video proof.", "category": "Wildcard", "difficulty": "hard", "points": 95, "proof_type": "video", "time_limit_hours": 72},
+    {"title": "Ice bath 2 minutes", "description": "2 full minutes in an ice/cold bath. Screaming allowed. Video.", "category": "Fitness", "difficulty": "hard", "points": 85, "proof_type": "video", "time_limit_hours": 72},
+    # Wildcard / performance — brutal
+    {"title": "Do a flip", "description": "Front, back or side flip on camera.", "category": "Wildcard", "difficulty": "hard", "points": 90, "proof_type": "video", "time_limit_hours": 72},
+    {"title": "Freestyle rap 60 seconds", "description": "60 seconds of freestyle rap, on video. No laughing.", "category": "Creativity", "difficulty": "hard", "points": 80, "proof_type": "video", "time_limit_hours": 72},
+    {"title": "Scream in public", "description": "Scream at the top of your lungs in a public place, no context, on video.", "category": "Wildcard", "difficulty": "medium", "points": 50, "proof_type": "video", "time_limit_hours": 48},
+    {"title": "Serenade someone", "description": "Sing a love song to someone at full volume, on camera.", "category": "Wildcard", "difficulty": "hard", "points": 90, "proof_type": "video", "time_limit_hours": 72},
+    {"title": "Dance in public 1 minute", "description": "Full send public dancing for a full minute. Video.", "category": "Wildcard", "difficulty": "hard", "points": 75, "proof_type": "video", "time_limit_hours": 48},
+    {"title": "Learn a TikTok dance", "description": "Learn and record a TikTok dance end to end without laughing.", "category": "Wildcard", "difficulty": "easy", "points": 40, "proof_type": "video", "time_limit_hours": 48},
+    # Mind / discipline
+    {"title": "Cold showers for a week", "description": "A cold shower every morning for 7 days. Log each one.", "category": "Mind/Skill", "difficulty": "hard", "points": 85, "proof_type": "self_report", "time_limit_hours": 168},
+    {"title": "Wake up at 5 AM", "description": "Up at 5 AM and out of bed. Photo of the sunrise with timestamp.", "category": "Mind/Skill", "difficulty": "medium", "points": 55, "proof_type": "photo", "time_limit_hours": 48},
+    {"title": "No sugar for 7 days", "description": "No candy, no soft drinks, no sugar for a full week.", "category": "Mind/Skill", "difficulty": "medium", "points": 60, "proof_type": "self_report", "time_limit_hours": 168},
+    {"title": "Sell something to a stranger", "description": "Sell an item to someone you don't know. Hustle.", "category": "Mind/Skill", "difficulty": "hard", "points": 90, "proof_type": "photo", "time_limit_hours": 168},
+    # Kindness
+    {"title": "Help a stranger for real", "description": "Carry groceries, help jump-start a car, hold something heavy — genuinely help.", "category": "Kindness", "difficulty": "medium", "points": 50, "proof_type": "photo", "time_limit_hours": 48},
+    {"title": "Buy a coffee for a stranger", "description": "Pay for a stranger's coffee and walk away without explaining.", "category": "Kindness", "difficulty": "easy", "points": 45, "proof_type": "photo", "time_limit_hours": 48},
 ]
 
 
-def create_quests_from_templates(db: Session, squad: models.Squad) -> None:
+def seed_global_quests(db: Session) -> None:
+    """Populate the admin-managed challenge pool from the template list if empty."""
+    if db.query(models.GlobalQuest).first() is not None:
+        return
     for q in DEFAULT_QUESTS:
-        db.add(models.Quest(squad_id=squad.id, is_active=True, **q))
+        db.add(models.GlobalQuest(**q))
+    db.commit()
+    print(f"Seeded {len(DEFAULT_QUESTS)} global quest templates")
+
+
+def create_quests_from_templates(db: Session, squad: models.Squad) -> None:
+    pool = db.query(models.GlobalQuest).all()
+    templates = [q for q in pool] if pool else DEFAULT_QUESTS
+    for q in templates:
+        if hasattr(q, "id"):  # GlobalQuest ORM row
+            db.add(
+                models.Quest(
+                    squad_id=squad.id,
+                    is_active=True,
+                    title=q.title,
+                    description=q.description,
+                    category=q.category,
+                    difficulty=q.difficulty,
+                    points=q.points,
+                    proof_type=q.proof_type,
+                    time_limit_hours=q.time_limit_hours,
+                )
+            )
+        else:  # plain dict template
+            db.add(models.Quest(squad_id=squad.id, is_active=True, **q))
 
 
 def write_demo_png(path: str, width: int, height: int, rgb: tuple) -> bytes:

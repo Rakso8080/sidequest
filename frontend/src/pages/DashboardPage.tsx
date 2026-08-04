@@ -111,7 +111,7 @@ export function DashboardPage() {
               <span className="w-7 text-center text-lg">
                 {RANK_EMOJI[e.rank] ?? <span className="text-sm font-bold text-white/40">{e.rank}</span>}
               </span>
-              <Avatar emoji={e.avatar} size="sm" />
+              <Avatar emoji={e.avatar} file={e.avatar_file} size="sm" />
               <div className="flex-1">
                 <div className="text-sm font-bold">
                   {e.display_name}

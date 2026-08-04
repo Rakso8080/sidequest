@@ -24,6 +24,7 @@ class UserOut(BaseModel):
     username: str
     display_name: str
     avatar: str
+    avatar_file: Optional[str] = None
     bio: str
     squad_id: Optional[int]
     total_points: int
@@ -74,6 +75,7 @@ class MemberOut(BaseModel):
     display_name: str
     username: str
     avatar: str
+    avatar_file: Optional[str] = None
     bio: str
     total_points: int
     streak: int
@@ -175,6 +177,7 @@ class SubmissionOut(BaseModel):
     user_id: int
     user_name: str
     user_avatar: str
+    user_avatar_file: Optional[str] = None
     status: str
     proof_text: str
     proof_file: Optional[str]
@@ -195,6 +198,7 @@ class PunishmentOut(BaseModel):
     user_id: int
     user_name: str
     user_avatar: str
+    user_avatar_file: Optional[str] = None
     description: str
     status: str
     due_date: datetime
@@ -215,12 +219,15 @@ class ChatMessageOut(BaseModel):
     user_id: int
     user_name: str
     user_avatar: str
+    user_avatar_file: Optional[str] = None
+    recipient_id: Optional[int] = None
     text: str
     created_at: datetime
 
 
 class ChatIn(BaseModel):
     text: str = Field(min_length=1, max_length=2000)
+    recipient_id: Optional[int] = None
 
 
 class LeaderboardEntryOut(BaseModel):
@@ -228,10 +235,55 @@ class LeaderboardEntryOut(BaseModel):
     user_id: int
     display_name: str
     avatar: str
+    avatar_file: Optional[str] = None
     total_points: int
     streak: int
     quests_completed: int
     is_admin: bool
+
+
+class UserSearchOut(BaseModel):
+    id: int
+    display_name: str
+    username: str
+    avatar: str
+    avatar_file: Optional[str] = None
+    squad_name: Optional[str] = None
+
+
+class GlobalQuestOut(BaseModel):
+    id: int
+    title: str
+    description: str
+    category: str
+    difficulty: str
+    points: int
+    proof_type: str
+    time_limit_hours: int
+
+    class Config:
+        from_attributes = True
+
+
+class GlobalQuestIn(BaseModel):
+    title: str = Field(min_length=2, max_length=160)
+    description: str = ""
+    category: str = Field(min_length=1, max_length=60)
+    difficulty: str = "medium"
+    points: int = Field(ge=5, le=1000)
+    proof_type: str = "photo"
+    time_limit_hours: int = Field(ge=1, le=24 * 30)
+
+
+class AdminLoginIn(BaseModel):
+    password: str
+
+
+class AdminOut(BaseModel):
+    token: str
+    quests: List[GlobalQuestOut]
+    users: List[dict]
+    squads: List[dict]
 
 
 class BadgeOut(BaseModel):

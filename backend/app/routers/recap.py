@@ -23,6 +23,7 @@ class RecapItemOut(BaseModel):
     created_at: Optional[str] = None
     user_name: str
     user_avatar: str
+    user_avatar_file: Optional[str] = None
 
 
 class RecapOut(BaseModel):
@@ -84,6 +85,7 @@ def get_recap(
                 created_at=s.resolved_at.isoformat() if s.resolved_at else None,
                 user_name=s.user.display_name,
                 user_avatar=s.user.avatar,
+                user_avatar_file=s.user.avatar_file,
             )
         )
     return RecapOut(

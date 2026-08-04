@@ -165,7 +165,7 @@ export function SquadPage() {
         <div className="card divide-y divide-white/5 !p-2">
           {squad.members.map((m) => (
             <div key={m.id} className="flex items-center gap-3 px-2 py-2.5">
-              <Avatar emoji={m.avatar} size="sm" />
+              <Avatar emoji={m.avatar} file={m.avatar_file} size="sm" />
               <div className="flex-1">
                 <div className="text-sm font-bold">
                   {m.display_name}

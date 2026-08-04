@@ -33,3 +33,18 @@ def create_token(user_id: int) -> str:
 def decode_token(token: str) -> int:
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     return int(payload["sub"])
+
+
+def create_admin_token() -> str:
+    payload = {
+        "sub": "admin",
+        "role": "admin",
+        "exp": datetime.now(timezone.utc) + timedelta(hours=TOKEN_TTL_HOURS),
+        "iat": datetime.now(timezone.utc),
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_admin_token(token: str) -> bool:
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    return payload.get("sub") == "admin" and payload.get("role") == "admin"

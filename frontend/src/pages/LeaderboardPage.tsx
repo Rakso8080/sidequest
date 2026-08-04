@@ -33,7 +33,7 @@ export function LeaderboardPage() {
               <span className="w-8 text-center text-xl">
                 {RANK_EMOJI[e.rank] ?? <span className="text-sm font-bold text-white/40">{e.rank}</span>}
               </span>
-              <Avatar emoji={e.avatar} />
+              <Avatar emoji={e.avatar} file={e.avatar_file} />
               <div className="flex-1">
                 <div className="font-bold">
                   {e.display_name}

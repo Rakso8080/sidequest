@@ -1,3 +1,5 @@
+import { assetUrl } from "../lib/format";
+
 export function Spinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const cls = size === "sm" ? "h-4 w-4" : size === "lg" ? "h-10 w-10" : "h-6 w-6";
   return (
@@ -27,7 +29,15 @@ export function EmptyState({ icon, title, subtitle }: { icon: string; title: str
   );
 }
 
-export function Avatar({ emoji, size = "md" }: { emoji: string; size?: "sm" | "md" | "lg" | "xl" }) {
+export function Avatar({
+  emoji,
+  file,
+  size = "md",
+}: {
+  emoji: string;
+  file?: string | null;
+  size?: "sm" | "md" | "lg" | "xl";
+}) {
   const cls =
     size === "sm"
       ? "h-8 w-8 text-lg"
@@ -36,6 +46,15 @@ export function Avatar({ emoji, size = "md" }: { emoji: string; size?: "sm" | "m
         : size === "xl"
           ? "h-20 w-20 text-5xl"
           : "h-11 w-11 text-2xl";
+  if (file) {
+    return (
+      <img
+        src={assetUrl(file)}
+        alt="avatar"
+        className={`${cls} shrink-0 rounded-full object-cover ring-1 ring-white/20`}
+      />
+    );
+  }
   return (
     <div
       className={`${cls} flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/30 to-fuchsia-500/20 ring-1 ring-white/15`}

@@ -33,6 +33,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     display_name: Mapped[str] = mapped_column(String(120))
     avatar: Mapped[str] = mapped_column(String(8), default="😎")
+    avatar_file: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     bio: Mapped[str] = mapped_column(Text, default="")
     squad_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("squads.id", ondelete="SET NULL"), nullable=True, index=True
@@ -92,6 +93,20 @@ class Quest(Base):
     )
 
 
+class GlobalQuest(Base):
+    __tablename__ = "global_quests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(160))
+    description: Mapped[str] = mapped_column(Text, default="")
+    category: Mapped[str] = mapped_column(String(60), index=True)
+    difficulty: Mapped[str] = mapped_column(String(20), default="medium")
+    points: Mapped[int] = mapped_column(Integer, default=50)
+    proof_type: Mapped[str] = mapped_column(String(20), default="photo")
+    time_limit_hours: Mapped[int] = mapped_column(Integer, default=72)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
 class QuestProposal(Base):
     __tablename__ = "quest_proposals"
 
@@ -121,12 +136,15 @@ class ChatMessage(Base):
         ForeignKey("squads.id", ondelete="CASCADE"), index=True
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    recipient_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
     text: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=utcnow, server_default=func.now()
     )
 
-    user: Mapped["User"] = relationship()
+    user: Mapped["User"] = relationship(foreign_keys=[user_id])
 
 
 class Submission(Base):
