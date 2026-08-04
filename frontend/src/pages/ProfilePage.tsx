@@ -72,6 +72,9 @@ export function ProfilePage() {
             <div className="mt-2 flex gap-2">
               <span className="chip bg-fuchsia-500/20 text-fuchsia-300">💎 {stats.total_points} pts</span>
               <span className="chip bg-white/10 text-white/60"># {stats.rank} rank</span>
+              <span className={`chip ${stats.streak > 0 ? "bg-orange-500/20 text-orange-300" : "bg-white/10 text-white/40"}`}>
+                🔥 {stats.streak}-day streak
+              </span>
             </div>
           </div>
           <button className="btn-ghost !px-3 !py-1.5 !text-xs" onClick={() => setEditing(true)}>

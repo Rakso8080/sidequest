@@ -38,6 +38,7 @@ class User(Base):
     )
     total_points: Mapped[int] = mapped_column(Integer, default=0)
     streak: Mapped[int] = mapped_column(Integer, default=0)
+    last_streak_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     squad: Mapped[Optional["Squad"]] = relationship(

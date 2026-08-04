@@ -178,3 +178,21 @@ export interface Dashboard {
   my_punishments: Punishment[];
   unread_notifications: number;
 }
+
+export interface RecapItem {
+  id: number;
+  title: string;
+  category: string;
+  points: number;
+  proof_file: string;
+  created_at: string | null;
+  user_name: string;
+  user_avatar: string;
+}
+
+export interface Recap {
+  squad_name: string;
+  year: number | null;
+  count: number;
+  items: RecapItem[];
+}

@@ -354,6 +354,100 @@ def test_full_flow(client: TestClient):
     r = client.post("/quests/start", json={"quest_id": due["id"]}, headers=auth(m0["token"]))
     assert r.status_code == 200, r.text
 
+    # --- Daily streak semantics ---
+    from app.database import SessionLocal
+    from app.models import User
+
+    bob_h = auth(client.post("/auth/login", json={"username_or_email": "bob@sidequest.app", "password": "demo123"}).json()["token"])
+    carol_h = auth(client.post("/auth/login", json={"username_or_email": "carol@sidequest.app", "password": "demo123"}).json()["token"])
+
+    def approve_next(client, token, admin_h, title):
+        r = client.post(
+            "/quests",
+            json={
+                "title": title,
+                "description": "x",
+                "category": "Wildcard",
+                "difficulty": "easy",
+                "points": 20,
+                "proof_type": "text",
+                "time_limit_hours": 24,
+            },
+            headers=admin_h,
+        )
+        q = r.json()
+        client.post("/quests/start", json={"quest_id": q["id"]}, headers=auth(token))
+        subs = client.get("/submissions?mine=true", headers=auth(token)).json()
+        sub = next(s for s in subs if s["quest_id"] == q["id"])
+        client.post(
+            f"/submissions/{sub['id']}/submit",
+            data={"proof_text": "done!"},
+            headers=auth(token),
+        )
+        for tok in (auth(members[1]["token"]), admin_h, auth(alice["token"]), bob_h, carol_h):
+            client.post(
+                "/votes",
+                json={"submission_id": sub["id"], "decision": "approve"},
+                headers=tok,
+            )
+        r = client.get(f"/submissions/{sub['id']}", headers=auth(token))
+        assert r.json()["status"] == "approved", r.text
+
+    # Streak reset by the punishment above → first approval since reset is day 1
+    approve_next(client, m0["token"], admin_h, "Streak day one")
+    assert client.get("/users/me", headers=auth(m0["token"])).json()["streak"] == 1
+
+    # Second approval the same day keeps the streak at 1
+    approve_next(client, m0["token"], admin_h, "Streak same day")
+    assert client.get("/users/me", headers=auth(m0["token"])).json()["streak"] == 1
+
+    # A completion on a new day bumps it to 2
+    db = SessionLocal()
+    u = db.query(User).filter(User.id == m0["user"]["id"]).one()
+    u.last_streak_date = (datetime.now() - timedelta(days=1)).date().isoformat()
+    db.commit()
+    db.close()
+    approve_next(client, m0["token"], admin_h, "Streak day two")
+    assert client.get("/users/me", headers=auth(m0["token"])).json()["streak"] == 2
+
+    # --- Recap (photo memories) ---
+    r = client.post(
+        "/quests",
+        json={
+            "title": "Photo memory quest",
+            "description": "x",
+            "category": "Creativity",
+            "difficulty": "easy",
+            "points": 15,
+            "proof_type": "photo",
+            "time_limit_hours": 24,
+        },
+        headers=admin_h,
+    )
+    qr = r.json()
+    client.post("/quests/start", json={"quest_id": qr["id"]}, headers=auth(m0["token"]))
+    subs = client.get("/submissions?mine=true", headers=auth(m0["token"])).json()
+    subp = next(s for s in subs if s["quest_id"] == qr["id"])
+    png = io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"\x00" * 64)
+    client.post(
+        f"/submissions/{subp['id']}/submit",
+        data={"proof_text": "pic!"},
+        files={"file": ("photo.png", png, "image/png")},
+        headers=auth(m0["token"]),
+    )
+    for tok in (auth(members[1]["token"]), admin_h, auth(alice["token"]), bob_h, carol_h):
+        client.post(
+            "/votes",
+            json={"submission_id": subp["id"], "decision": "approve"},
+            headers=tok,
+        )
+    r = client.get(f"/submissions/{subp['id']}", headers=auth(m0["token"]))
+    assert r.json()["status"] == "approved"
+    r = client.get("/recap", headers=admin_h)
+    assert r.status_code == 200, r.text
+    assert r.json()["count"] >= 1
+    assert any(i["title"] == "Photo memory quest" for i in r.json()["items"])
+
     # --- Rate limiting ---
     code = None
     for _ in range(11):

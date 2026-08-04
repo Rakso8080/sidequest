@@ -16,6 +16,7 @@ export function markChatSeen(id: number) {
 const tabs = [
   { to: "/", label: "Home", icon: "🏠" },
   { to: "/quests", label: "Quests", icon: "🎯" },
+  { to: "/recap", label: "Recap", icon: "🎬" },
   { to: "/chat", label: "Chat", icon: "💬" },
   { to: "/leaderboard", label: "Ranks", icon: "🏆" },
   { to: "/squad", label: "Squad", icon: "👥" },
@@ -61,12 +62,12 @@ export function NavBar() {
             key={t.to}
             to={t.to}
             className={({ isActive }) =>
-              `relative flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] font-bold transition ${
+              `relative flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[9px] font-bold transition ${
                 isActive ? "text-fuchsia-300" : "text-white/40 hover:text-white/70"
               }`
             }
           >
-            <span className="text-xl leading-none">{t.icon}</span>
+            <span className="text-lg leading-none">{t.icon}</span>
             {t.label}
             {t.to === "/chat" && unread > 0 && (
               <span className="absolute right-1/2 top-1 flex h-4 min-w-4 translate-x-3 items-center justify-center rounded-full bg-fuchsia-500 px-1 text-[9px] font-bold">

@@ -23,6 +23,11 @@ lighthearted punishments when you fail. Mobile-first web app.
 - **Points & punishments** — approved quests award points and build streaks;
   rejected/expired quests assign a random punishment from an admin-editable pool
   with a due date.
+- **Daily streaks** — complete at least one quest per day to keep your 🔥 flame
+  alive (Duolingo-style). A rejected/expired quest resets it.
+- **Yearly recap video** — every approved quest photo is saved; generate a
+  cinematic recap slideshow video in the browser and download it. After a year
+  of questing that's your annual recap.
 - **Leaderboard, stats, badges** — live rankings, streaks, completion rate,
   favorite category, achievements.
 - **Notifications** — new submissions to vote on, vote results, punishments,
@@ -148,6 +153,23 @@ above):
 ```bash
 cd frontend && VITE_API_BASE=https://your.domain npm run build
 ```
+
+### Free database options
+
+The app works out of the box with the local SQLite file (zero setup). For a
+free, always-on database when you deploy for your friends:
+
+- **Neon** — free serverless Postgres (0.5 GB storage). Great fit; set
+  `DATABASE_URL=postgresql+psycopg2://user:pass@host/db` and install
+  `psycopg2-binary` in the container.
+- **Supabase** — free Postgres (500 MB) plus free object storage, which can
+  replace the `UPLOAD_DIR` later.
+- **Turso** — free edge SQLite (9 GB), stays SQLite-compatible.
+- **Railway / Fly.io** — free or near-free tiers that also host the app.
+
+For a squad of ~10–50 friends, free-tier Postgres from Neon or Supabase is
+plenty. The only change needed is `DATABASE_URL` + the Postgres driver —
+SQLAlchemy handles the rest.
 
 ### Security notes
 

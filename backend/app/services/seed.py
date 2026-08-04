@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import os
 import random
+import struct
+import zlib
 from datetime import datetime, timedelta
 from typing import Dict, List
 
 from sqlalchemy.orm import Session
 
 from .. import models
+from ..database import UPLOAD_DIR
 from ..security import hash_password
 from .settings import DEFAULT_SETTINGS
 
@@ -38,6 +42,22 @@ DEFAULT_QUESTS: List[Dict] = [
 def create_quests_from_templates(db: Session, squad: models.Squad) -> None:
     for q in DEFAULT_QUESTS:
         db.add(models.Quest(squad_id=squad.id, is_active=True, **q))
+
+
+def write_demo_png(path: str, width: int, height: int, rgb: tuple) -> None:
+    """Write a tiny solid-color PNG so the demo has real photo proofs to show."""
+    def chunk(typ: bytes, data: bytes) -> bytes:
+        c = struct.pack(">I", len(data)) + typ + data
+        c += struct.pack(">I", zlib.crc32(typ + data) & 0xFFFFFFFF)
+        return c
+
+    row = b"\x00" + bytes(rgb) * width
+    raw = row * height
+    sig = b"\x89PNG\r\n\x1a\n"
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    idat = zlib.compress(raw)
+    with open(path, "wb") as fh:
+        fh.write(sig + chunk(b"IHDR", ihdr) + chunk(b"IDAT", idat) + chunk(b"IEND", b""))
 
 
 def generate_invite_code(db: Session) -> str:
@@ -106,8 +126,10 @@ def seed_demo(db: Session) -> None:
     all_users = [admin] + users
     quests = db.query(models.Quest).filter(models.Quest.squad_id == squad.id).all()
     rng = random.Random(42)
+    demo_colors = [(139, 92, 246), (217, 70, 239), (16, 185, 129), (245, 158, 11), (14, 165, 233), (244, 63, 94)]
 
     # Give the demo crew some approved history for a lively leaderboard.
+    photo_index = 0
     for user, n in ((users[0], 5), (users[1], 3), (users[2], 4), (admin, 2)):
         picked = rng.sample(quests, n)
         for i, q in enumerate(picked):
@@ -122,6 +144,16 @@ def seed_demo(db: Session) -> None:
                 deadline=created + timedelta(hours=q.time_limit_hours),
                 resolved_at=created + timedelta(days=1),
             )
+            if q.proof_type == "photo":
+                fname = f"demo_photo_{photo_index}.png"
+                write_demo_png(
+                    os.path.join(UPLOAD_DIR, fname),
+                    640,
+                    480,
+                    demo_colors[photo_index % len(demo_colors)],
+                )
+                sub.proof_file = f"/uploads/{fname}"
+                photo_index += 1
             db.add(sub)
             user.total_points += q.points
             user.streak += 1

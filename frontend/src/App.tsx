@@ -7,6 +7,7 @@ import { AuthPage } from "./pages/AuthPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { QuestsPage } from "./pages/QuestsPage";
 import { ChatPage } from "./pages/ChatPage";
+import { RecapPage } from "./pages/RecapPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { SquadPage } from "./pages/SquadPage";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -64,6 +65,16 @@ export default function App() {
           <Protected>
             <SquadRequired>
               <ChatPage />
+            </SquadRequired>
+          </Protected>
+        }
+      />
+      <Route
+        path="/recap"
+        element={
+          <Protected>
+            <SquadRequired>
+              <RecapPage />
             </SquadRequired>
           </Protected>
         }

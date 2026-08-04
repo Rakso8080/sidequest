@@ -48,7 +48,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-4 gap-2">
         {[
           { label: "Points", value: stats.total_points, icon: "💎" },
-          { label: "Streak", value: stats.streak, icon: "🔥" },
+          { label: "Day streak", value: stats.streak, icon: "🔥" },
           { label: "Rank", value: `#${stats.rank}`, icon: "🏅" },
           { label: "Done", value: stats.quests_completed, icon: "✅" },
         ].map((s) => (

@@ -18,6 +18,7 @@ from .routers import (
     overview,
     punishments,
     quests,
+    recap,
     squads,
     submissions,
     users,
@@ -66,6 +67,7 @@ for r in (
     leaderboard,
     notifications,
     chat,
+    recap,
     overview,
 ):
     app.include_router(r.router)

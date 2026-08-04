@@ -58,16 +58,29 @@ def _decide(
     return None
 
 
+def _today_str() -> str:
+    return utcnow().date().isoformat()
+
+
 def _award(db: Session, submission: models.Submission, squad: models.Squad) -> None:
     user = submission.user
     user.total_points += submission.quest.points
-    user.streak += 1
+    # Daily streak: one approved quest per day keeps the flame alive.
+    today = _today_str()
+    if user.last_streak_date == today:
+        pass  # already counted today
+    elif user.last_streak_date == (utcnow().date() - timedelta(days=1)).isoformat():
+        user.streak += 1
+    else:
+        user.streak = 1
+    user.last_streak_date = today
     notify(
         db,
         user.id,
         squad.id,
         "Quest approved! 🎉",
-        f"+{submission.quest.points} pts · “{submission.quest.title}”",
+        f"+{submission.quest.points} pts · “{submission.quest.title}”"
+        + (f" · 🔥 {user.streak}-day streak" if user.streak > 1 else ""),
         ntype="success",
     )
 
@@ -78,6 +91,7 @@ def _punish(
     settings = get_settings(squad)
     user = submission.user
     user.streak = 0
+    user.last_streak_date = None
     pool = settings.get("punishments") or ["Buy the group coffee"]
     description = random.choice(pool)
     due = utcnow() + timedelta(days=int(settings.get("punishment_due_days", 7)))
