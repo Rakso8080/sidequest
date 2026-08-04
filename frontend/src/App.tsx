@@ -13,6 +13,8 @@ import { SquadPage } from "./pages/SquadPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import AdminPage from "./pages/AdminPage";
+import { TermsPage } from "./pages/TermsPage";
+import { InvitePage } from "./pages/InvitePage";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loaded } = useAuth();
@@ -40,6 +42,17 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+      <Route
+        path="/invite"
+        element={
+          !user || !user.squad_id ? (
+            <InvitePage />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+      <Route path="/terms" element={<TermsPage />} />
       <Route
         path="/"
         element={

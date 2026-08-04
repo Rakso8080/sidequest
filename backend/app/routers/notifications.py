@@ -6,11 +6,60 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..deps import require_member
-from ..models import Notification, User
-from ..schemas import NotificationOut
+from ..deps import get_current_user, require_member
+from ..models import Notification, PushSubscription, User
+from ..schemas import NotificationOut, PushSubscribeIn
+from ..services import push
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
+
+
+@router.get("/vapid-public-key")
+def vapid_public_key(db: Session = Depends(get_db)):
+    return {"public_key": push.get_vapid_public_key(db)}
+
+
+@router.post("/subscribe")
+def subscribe(
+    payload: PushSubscribeIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    existing = (
+        db.query(PushSubscription)
+        .filter(PushSubscription.endpoint == payload.endpoint)
+        .first()
+    )
+    if existing is None:
+        db.add(
+            PushSubscription(
+                user_id=user.id,
+                endpoint=payload.endpoint,
+                p256dh=payload.p256dh,
+                auth=payload.auth,
+            )
+        )
+        db.commit()
+    else:
+        existing.user_id = user.id
+        existing.p256dh = payload.p256dh
+        existing.auth = payload.auth
+        db.commit()
+    return {"ok": True}
+
+
+@router.post("/unsubscribe")
+def unsubscribe(
+    payload: PushSubscribeIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    db.query(PushSubscription).filter(
+        PushSubscription.endpoint == payload.endpoint,
+        PushSubscription.user_id == user.id,
+    ).delete()
+    db.commit()
+    return {"ok": True}
 
 
 @router.get("", response_model=List[NotificationOut])

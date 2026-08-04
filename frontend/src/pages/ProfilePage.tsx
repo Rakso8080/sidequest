@@ -38,6 +38,7 @@ export function ProfilePage() {
     status_text: user?.status_text ?? "",
     status_emoji: user?.status_emoji ?? "",
     pronouns: user?.pronouns ?? "",
+    phone: user?.phone ?? "",
     banner_color: user?.banner_color ?? BANNER_COLORS[0],
   });
   const [uploading, setUploading] = useState(false);
@@ -298,6 +299,9 @@ export function ProfilePage() {
         <Link to="/admin" className="btn-ghost w-full">
           🛠️ {t("profile.admin")}
         </Link>
+        <Link to="/terms" className="btn-ghost w-full">
+          📜 {t("terms.title")}
+        </Link>
       </section>
 
       {/* Punishments */}
@@ -398,6 +402,14 @@ export function ProfilePage() {
                 value={form.pronouns}
                 maxLength={40}
                 onChange={(e) => setForm({ ...form, pronouns: e.target.value })}
+              />
+              <input
+                className="input"
+                placeholder={`${t("auth.phone")} — e.g. +47 900 00 000`}
+                type="tel"
+                value={form.phone}
+                maxLength={30}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
               />
               <div>
                 <div className="mb-1.5 text-xs font-bold text-white/50">Banner color</div>

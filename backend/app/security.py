@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 from .config import SECRET_KEY
 
 ALGORITHM = "HS256"
-TOKEN_TTL_HOURS = 24 * 7
+TOKEN_TTL_HOURS = 24 * 30  # ~30 days so users stay logged in
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

@@ -58,6 +58,8 @@ def update_me(
         if color and not color.startswith("#"):
             color = f"#{color}"
         user.banner_color = color[:9] if color else None
+    if payload.phone is not None:
+        user.phone = payload.phone.strip() or None
     db.add(user)
     db.commit()
     return user

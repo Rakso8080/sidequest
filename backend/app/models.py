@@ -32,6 +32,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(60), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     display_name: Mapped[str] = mapped_column(String(120))
+    phone: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
     avatar: Mapped[str] = mapped_column(String(8), default="😎")
     avatar_file: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     bio: Mapped[str] = mapped_column(Text, default="")
@@ -283,3 +284,44 @@ class UploadedFile(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=utcnow, server_default=func.now()
     )
+
+
+class PasswordReset(Base):
+    """One-time code for resetting a forgotten password."""
+
+    __tablename__ = "password_resets"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    identifier: Mapped[str] = mapped_column(String(255), index=True)
+    code_hash: Mapped[str] = mapped_column(String(255))
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class PushSubscription(Base):
+    """A browser/phone's Web Push subscription for a user."""
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    endpoint: Mapped[str] = mapped_column(String(500), unique=True)
+    p256dh: Mapped[str] = mapped_column(String(255))
+    auth: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utcnow, server_default=func.now()
+    )
+
+
+class AppSetting(Base):
+    """Tiny key/value store for app-generated secrets (e.g. VAPID keys)
+    that must survive restarts even on an ephemeral filesystem."""
+
+    __tablename__ = "app_settings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(String(60), unique=True)
+    value: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

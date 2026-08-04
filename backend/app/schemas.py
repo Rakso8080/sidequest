@@ -11,11 +11,23 @@ class RegisterIn(BaseModel):
     username: str = Field(min_length=2, max_length=60)
     password: str = Field(min_length=6, max_length=128)
     display_name: str = Field(min_length=1, max_length=120)
+    phone: Optional[str] = None
+    invite_code: Optional[str] = None
 
 
 class LoginIn(BaseModel):
     username_or_email: str
     password: str
+
+
+class ForgotIn(BaseModel):
+    identifier: str
+
+
+class ResetIn(BaseModel):
+    identifier: str
+    code: str
+    new_password: str = Field(min_length=6, max_length=128)
 
 
 class UserOut(BaseModel):
@@ -26,6 +38,7 @@ class UserOut(BaseModel):
     avatar: str
     avatar_file: Optional[str] = None
     bio: str
+    phone: Optional[str] = None
     squad_id: Optional[int]
     total_points: int
     streak: int
@@ -54,6 +67,13 @@ class UpdateProfileIn(BaseModel):
     status_emoji: Optional[str] = None
     pronouns: Optional[str] = None
     banner_color: Optional[str] = None
+    phone: Optional[str] = None
+
+
+class PushSubscribeIn(BaseModel):
+    endpoint: str
+    p256dh: str
+    auth: str
 
 
 class CreateSquadIn(BaseModel):

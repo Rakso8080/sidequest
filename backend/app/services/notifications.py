@@ -24,3 +24,10 @@ def notify(
             body=body,
         )
     )
+    # Also deliver a Web Push to the phone/browser if subscribed.
+    from .push import dispatch_push
+
+    try:
+        dispatch_push(db, user_id, title, body)
+    except Exception:
+        pass

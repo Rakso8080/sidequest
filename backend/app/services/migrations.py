@@ -34,6 +34,7 @@ _COLUMNS = {
         "last_seen": "TIMESTAMP",
         "last_read_id": "INTEGER DEFAULT 0",
         "streak_shields": "INTEGER DEFAULT 0",
+        "phone": "VARCHAR(30)",
     },
     "chat_messages": {
         "reply_to_id": "INTEGER",
@@ -54,6 +55,33 @@ _TABLES = {
             message_id INTEGER NOT NULL,
             user_id INTEGER NOT NULL,
             emoji VARCHAR(16) NOT NULL,
+            created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP)
+        )
+    """,
+    "password_resets": """
+        CREATE TABLE IF NOT EXISTS password_resets (
+            id INTEGER PRIMARY KEY,
+            identifier VARCHAR(255) NOT NULL,
+            code_hash VARCHAR(255) NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP)
+        )
+    """,
+    "push_subscriptions": """
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            endpoint VARCHAR(500) NOT NULL UNIQUE,
+            p256dh VARCHAR(255) NOT NULL,
+            auth VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP)
+        )
+    """,
+    "app_settings": """
+        CREATE TABLE IF NOT EXISTS app_settings (
+            id INTEGER PRIMARY KEY,
+            key VARCHAR(60) NOT NULL UNIQUE,
+            value TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP)
         )
     """,

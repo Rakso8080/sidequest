@@ -6,6 +6,7 @@ export interface User {
   avatar: string;
   avatar_file: string | null;
   bio: string;
+  phone: string | null;
   squad_id: number | null;
   total_points: number;
   streak: number;

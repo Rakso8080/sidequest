@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..deps import get_current_user, is_online, require_admin
+from ..deps import get_current_user, is_online, require_admin, require_member
 from ..models import Squad, User
 from ..schemas import (
     CreateSquadIn,
@@ -131,3 +131,37 @@ def rotate_invite(
     squad.invite_code = generate_invite_code(db)
     db.flush()
     return _squad_out(db, squad)
+
+
+@router.post("/leave")
+def leave_squad(
+    user: User = Depends(require_member), db: Session = Depends(get_db)
+):
+    """Leave your squad so you can create or join a new group."""
+    squad = db.get(Squad, user.squad_id)
+    if squad is not None and squad.admin_id == user.id:
+        raise HTTPException(
+            status_code=400,
+            detail="You're the admin — disband the squad instead (or pass admin to someone).",
+        )
+    user.squad_id = None
+    db.flush()
+    return {"ok": True}
+
+
+@router.post("/disband")
+def disband_squad(
+    admin: User = Depends(require_admin), db: Session = Depends(get_db)
+):
+    """Admin disbands the group; all members are freed to join/create others."""
+    squad = db.get(Squad, admin.squad_id)
+    if squad is None:
+        raise HTTPException(status_code=404, detail="No squad yet")
+    # Free members first (FK is SET NULL, but do it explicitly for clarity).
+    for m in squad.members:
+        if m.squad_id == squad.id:
+            m.squad_id = None
+    db.flush()
+    db.delete(squad)
+    db.commit()
+    return {"ok": True}

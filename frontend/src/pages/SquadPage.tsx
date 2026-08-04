@@ -60,6 +60,26 @@ export function SquadPage() {
     onSuccess: () => qc.invalidateQueries(),
   });
 
+  const leaveSquad = useMutation({
+    mutationFn: () => api.post("/squads/leave"),
+    onSuccess: () => {
+      useAuth.setState({ user: { ...user!, squad_id: null } });
+      qc.invalidateQueries();
+      show("You left the squad 👋");
+    },
+    onError: (err: any) => show(err.message || "Failed to leave"),
+  });
+
+  const disbandSquad = useMutation({
+    mutationFn: () => api.post("/squads/disband"),
+    onSuccess: () => {
+      useAuth.setState({ user: { ...user!, squad_id: null } });
+      qc.invalidateQueries();
+      show("Squad disbanded");
+    },
+    onError: (err: any) => show(err.message || "Failed to disband"),
+  });
+
   async function copyCode() {
     if (!squad) return;
     try {
@@ -69,6 +89,38 @@ export function SquadPage() {
     } catch {
       /* ignore */
     }
+  }
+
+  function inviteLink(): string {
+    return `${window.location.origin}/invite?code=${squad?.invite_code ?? ""}`;
+  }
+
+  async function copyInviteLink() {
+    if (!squad) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink());
+      show("Invite link copied! 📋");
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function shareInvite() {
+    if (!squad) return;
+    const url = inviteLink();
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: "Join my SideQuest squad!",
+          text: "Come do quests with me 💪",
+          url,
+        });
+        return;
+      } catch {
+        /* user closed the share sheet */
+      }
+    }
+    copyInviteLink();
   }
 
   if (isLoading) return <PageLoader />;
@@ -149,6 +201,14 @@ export function SquadPage() {
           </div>
           <button className="btn-ghost shrink-0" onClick={copyCode}>
             {copied ? t("squad.copied") : t("squad.copy")}
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button className="btn-primary" onClick={shareInvite}>
+            🎁 {t("squad.inviteFriends")}
+          </button>
+          <button className="btn-ghost" onClick={copyInviteLink}>
+            🔗 {t("squad.copyLink")}
           </button>
         </div>
         {isAdmin && (
@@ -344,6 +404,32 @@ export function SquadPage() {
           </div>
         </section>
       )}
+
+      {/* Danger zone */}
+      <section className="card space-y-2 border-rose-500/20">
+        <h2 className="font-display text-sm font-extrabold text-rose-300">⚠️ {t("squad.leaveTitle")}</h2>
+        {isAdmin ? (
+          <button
+            className="btn-danger w-full"
+            onClick={() => {
+              if (window.confirm("Disband the whole squad? Everyone loses access to this group.")) {
+                disbandSquad.mutate();
+              }
+            }}
+          >
+            {t("squad.disband")}
+          </button>
+        ) : (
+          <button
+            className="btn-danger w-full"
+            onClick={() => {
+              if (window.confirm("Leave this squad?")) leaveSquad.mutate();
+            }}
+          >
+            {t("squad.leave")}
+          </button>
+        )}
+      </section>
     </div>
   );
 }
