@@ -10,6 +10,11 @@ export interface User {
   total_points: number;
   streak: number;
   created_at: string;
+  status_text: string | null;
+  status_emoji: string | null;
+  pronouns: string | null;
+  banner_color: string | null;
+  streak_shields: number;
 }
 
 export interface TokenResponse {
@@ -37,6 +42,12 @@ export interface Member {
   total_points: number;
   streak: number;
   is_admin: boolean;
+  status_text: string | null;
+  status_emoji: string | null;
+  pronouns: string | null;
+  banner_color: string | null;
+  online: boolean;
+  last_seen: string | null;
 }
 
 export interface Squad {
@@ -59,6 +70,7 @@ export interface Quest {
   time_limit_hours: number;
   is_active: boolean;
   scheduled_for: string | null;
+  squad_quest: boolean;
   created_by: number | null;
   created_by_name: string | null;
   my_status: string | null;
@@ -135,6 +147,13 @@ export interface Notification {
   created_at: string;
 }
 
+export interface ChatReaction {
+  emoji: string;
+  users: number[];
+  count: number;
+  mine: boolean;
+}
+
 export interface ChatMessage {
   id: number;
   user_id: number;
@@ -142,9 +161,34 @@ export interface ChatMessage {
   user_avatar: string;
   user_avatar_file: string | null;
   recipient_id: number | null;
+  reply_to_id: number | null;
+  reply_snippet: string | null;
+  reply_user_name: string | null;
   text: string | null;
   sticker: string | null;
+  gif_url: string | null;
+  gif_thumb: string | null;
+  edited: boolean;
+  pinned: boolean;
+  reactions: ChatReaction[];
   created_at: string;
+}
+
+export interface PresenceEntry {
+  user_id: number;
+  display_name: string;
+  avatar: string;
+  avatar_file: string | null;
+  online: boolean;
+  last_seen: string | null;
+  last_read_id: number;
+}
+
+export interface Gif {
+  url: string;
+  thumb: string;
+  width: number;
+  height: number;
 }
 
 export interface UserSearchResult {

@@ -90,8 +90,20 @@ def _punish(
 ) -> None:
     settings = get_settings(squad)
     user = submission.user
-    user.streak = 0
-    user.last_streak_date = None
+    if (user.streak_shields or 0) > 0:
+        # A shield absorbs the streak reset (but not the punishment itself).
+        user.streak_shields = (user.streak_shields or 0) - 1
+        notify(
+            db,
+            user.id,
+            squad.id,
+            "🛡️ Streak shield used",
+            f"A shield protected your {user.streak}-day streak from resetting.",
+            ntype="info",
+        )
+    else:
+        user.streak = 0
+        user.last_streak_date = None
     pool = settings.get("punishments") or ["Buy the group coffee"]
     description = random.choice(pool)
     due = utcnow() + timedelta(days=int(settings.get("punishment_due_days", 7)))
@@ -127,6 +139,40 @@ def _apply_outcome(
     else:
         reason = "Rejected by the squad" if outcome == "rejected" else "Deadline missed"
         _punish(db, submission, squad, reason)
+        # Squad quests: everyone must participate. Anyone who never submitted
+        # loses a slice of points when a teammate's squad-quest expires.
+        quest = submission.quest
+        if quest.squad_quest and outcome == "expired":
+            _penalize_idle_members(db, squad, quest, submission.user_id)
+
+
+def _penalize_idle_members(
+    db: Session, squad: models.Squad, quest: models.Quest, submitter_id: int
+) -> None:
+    """Idle squad members lose points when a squad quest expires without their
+    participation. The submitter who missed the deadline is already punished."""
+    participant_ids = {
+        s.user_id
+        for s in db.query(models.Submission)
+        .filter(models.Submission.quest_id == quest.id)
+        .all()
+    }
+    for m in squad.members:
+        if m.squad_id != squad.id or m.id == submitter_id:
+            continue
+        if m.id in participant_ids:
+            continue
+        penalty = min(30, max(10, quest.points // 3))
+        m.total_points = max(0, m.total_points - penalty)
+        notify(
+            db,
+            m.id,
+            squad.id,
+            "Squad quest failed 😤",
+            f"“{quest.title}” expired and you never submitted — lost {penalty} pts.",
+            ntype="punishment",
+        )
+    db.flush()
 
 
 def sync_submission(

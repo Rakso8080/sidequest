@@ -174,6 +174,7 @@ export function QuestsPage() {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="chip bg-white/10 text-white/60">{q.category}</span>
                       <span className={`chip ${diff.cls}`}>{diff.label}</span>
+                      {q.squad_quest && <span className="chip bg-rose-500/20 text-rose-300">👥 Squad quest</span>}
                       {q.my_status && (
                         <span className="chip bg-sky-500/20 text-sky-300">
                           {q.my_status === "in_progress" ? "⏳ In progress" : "🗳️ Awaiting votes"}

@@ -6,7 +6,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..deps import get_current_user
+from ..deps import get_current_user, is_online
 from ..models import Squad, User
 from ..schemas import CreateSquadIn, JoinSquadIn, SquadOut, UpdateProfileIn, UserOut, UserSearchOut
 from ..services.seed import create_squad, generate_invite_code
@@ -47,6 +47,17 @@ def update_me(
         user.avatar = payload.avatar.strip() or user.avatar
     if payload.bio is not None:
         user.bio = payload.bio
+    if payload.status_text is not None:
+        user.status_text = payload.status_text.strip()[:120] or None
+    if payload.status_emoji is not None:
+        user.status_emoji = payload.status_emoji.strip()[:8] or None
+    if payload.pronouns is not None:
+        user.pronouns = payload.pronouns.strip()[:40] or None
+    if payload.banner_color is not None:
+        color = payload.banner_color.strip()
+        if color and not color.startswith("#"):
+            color = f"#{color}"
+        user.banner_color = color[:9] if color else None
     db.add(user)
     db.commit()
     return user
@@ -66,6 +77,25 @@ def upload_avatar(
     if not data:
         raise HTTPException(status_code=400, detail="Empty file")
     user.avatar_file = save_upload(db, data, file.filename or "avatar", file.content_type or "image/jpeg")
+    db.add(user)
+    db.commit()
+    return user
+
+
+SHIELD_COST = 50
+
+
+@router.post("/users/me/shields", response_model=UserOut)
+def buy_shield(
+    user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    """Spend 50 points to buy a streak shield (protects a 1-day miss)."""
+    if user.total_points < SHIELD_COST:
+        raise HTTPException(
+            status_code=400, detail=f"Need {SHIELD_COST} points for a streak shield"
+        )
+    user.total_points -= SHIELD_COST
+    user.streak_shields = (user.streak_shields or 0) + 1
     db.add(user)
     db.commit()
     return user
@@ -135,6 +165,12 @@ def _squad_out(db: Session, squad: Squad) -> SquadOut:
             "total_points": m.total_points,
             "streak": m.streak,
             "is_admin": m.id == squad.admin_id,
+            "status_text": m.status_text,
+            "status_emoji": m.status_emoji,
+            "pronouns": m.pronouns,
+            "banner_color": m.banner_color,
+            "online": is_online(m),
+            "last_seen": m.last_seen,
         }
         for m in squad.members
         if m.squad_id == squad.id

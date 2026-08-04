@@ -35,6 +35,8 @@ const en = {
   "dashboard.none": "Nothing here yet",
   "dashboard.noActive": "No active quests. Grab one from the board!",
   "dashboard.noVotes": "No submissions waiting for your vote. Nice.",
+  "dashboard.daily": "Quest of the day",
+  "dashboard.mvp": "MVP of the week",
 
   "quests.title": "Quest board",
   "quests.subtitle": "Pick a challenge, complete it, prove it.",
@@ -68,6 +70,7 @@ const en = {
   "chat.send": "Send",
   "chat.stickers": "Stickers",
   "chat.you": "you",
+  "chat.online": "online",
 
   "leaderboard.title": "Leaderboard",
   "leaderboard.subtitle": "Who's got the guts?",
@@ -106,6 +109,8 @@ const en = {
   "profile.soundHint": "Ticks, dings, and victory jingles",
   "profile.install": "Install the app",
   "profile.admin": "Admin panel",
+  "profile.shields": "Streak shields",
+  "profile.shieldsHint": "A shield protects your streak from resetting when you miss a day. Costs 50 pts.",
   "profile.myPunishments": "My punishments",
   "profile.myQuests": "My quests",
   "profile.nothingHere": "Nothing here yet",
@@ -219,6 +224,8 @@ const de: Record<string, string> = {
   "dashboard.none": "Noch nichts hier",
   "dashboard.noActive": "Keine aktiven Questen. Schnapp dir eine vom Brett!",
   "dashboard.noVotes": "Keine Einreichungen warten auf dein Votum. Top.",
+  "dashboard.daily": "Quest des Tages",
+  "dashboard.mvp": "MVP der Woche",
 
   "quests.title": "Questen-Brett",
   "quests.subtitle": "Wähle eine Challenge, mach sie, beweise sie.",
@@ -247,6 +254,7 @@ const de: Record<string, string> = {
   "chat.send": "Senden",
   "chat.stickers": "Sticker",
   "chat.you": "du",
+  "chat.online": "online",
 
   "leaderboard.title": "Rangliste",
   "leaderboard.subtitle": "Wer traut sich?",
@@ -283,6 +291,8 @@ const de: Record<string, string> = {
   "profile.soundHint": "Ticks, Dings und Sieges-Jingles",
   "profile.install": "App installieren",
   "profile.admin": "Admin-Bereich",
+  "profile.shields": "Streak-Schilder",
+  "profile.shieldsHint": "Ein Schild schützt deine Serie vor dem Zurücksetzen, wenn du einen Tag verpasst. Kostet 50 Pkt.",
   "profile.myPunishments": "Meine Strafen",
   "profile.myQuests": "Meine Questen",
   "profile.nothingHere": "Noch nichts hier",
@@ -392,6 +402,8 @@ const no: Record<string, string> = {
   "dashboard.none": "Ingenting her ennå",
   "dashboard.noActive": "Ingen aktive utfordringer. Hent en fra brettet!",
   "dashboard.noVotes": "Ingen innleveringer venter på din stemme. Fint.",
+  "dashboard.daily": "Dagens utfordring",
+  "dashboard.mvp": "Ukens MVP",
 
   "quests.title": "Utfordringsbrett",
   "quests.subtitle": "Velg en utfordring, gjennomfør den, bevis det.",
@@ -420,6 +432,7 @@ const no: Record<string, string> = {
   "chat.send": "Send",
   "chat.stickers": "Klistremerker",
   "chat.you": "deg",
+  "chat.online": "på nett",
 
   "leaderboard.title": "Rangering",
   "leaderboard.subtitle": "Hvem tør?",
@@ -456,6 +469,8 @@ const no: Record<string, string> = {
   "profile.soundHint": "Tikk, pling og seiersfanfarer",
   "profile.install": "Installer appen",
   "profile.admin": "Adminpanel",
+  "profile.shields": "Streak-skjold",
+  "profile.shieldsHint": "Et skjold beskytter serien din mot å nullstilles hvis du går glipp av en dag. Koster 50 pkt.",
   "profile.myPunishments": "Mine straffer",
   "profile.myQuests": "Mine utfordringer",
   "profile.nothingHere": "Ingenting her ennå",

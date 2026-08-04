@@ -8,9 +8,21 @@ import { Avatar, PageLoader, ProgressBar, EmptyState } from "../components/ui";
 import { SubmissionCard } from "../components/SubmissionCard";
 import { Toast, useToast } from "../components/modal";
 import { AVATARS } from "../lib/format";
+import { levelIcon, levelProgress, levelTitle } from "../lib/levels";
 import { sfx } from "../lib/sound";
 import { useInstallPrompt } from "../lib/pwa";
 import { LANGS, useI18n } from "../lib/i18n";
+
+const BANNER_COLORS = [
+  "#7c3aed",
+  "#db2777",
+  "#0891b2",
+  "#ea580c",
+  "#059669",
+  "#4f46e5",
+  "#e11d48",
+  "#111827",
+];
 
 export function ProfilePage() {
   const { user, setUser } = useAuth();
@@ -23,6 +35,10 @@ export function ProfilePage() {
     username: user?.username ?? "",
     bio: user?.bio ?? "",
     avatar: user?.avatar ?? "😎",
+    status_text: user?.status_text ?? "",
+    status_emoji: user?.status_emoji ?? "",
+    pronouns: user?.pronouns ?? "",
+    banner_color: user?.banner_color ?? BANNER_COLORS[0],
   });
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -51,6 +67,17 @@ export function ProfilePage() {
       show(t("profile.updated"));
     },
     onError: (err: any) => show(err.message || t("profile.saveFailed")),
+  });
+
+  const buyShield = useMutation({
+    mutationFn: () => api.post<User>("/users/me/shields"),
+    onSuccess: (u) => {
+      setUser(u);
+      qc.invalidateQueries();
+      show("🛡️ Shield acquired!");
+      sfx.pop();
+    },
+    onError: (err: any) => show(err.message || "Couldn't buy shield"),
   });
 
   const uploadAvatar = useMutation({
@@ -86,29 +113,76 @@ export function ProfilePage() {
 
   if (!user || !stats) return <PageLoader />;
 
+  const prog = levelProgress(user.total_points);
+  const lvlTitle = levelTitle(user.total_points);
+  const lvlIcon = levelIcon(user.total_points);
+  const banner = user.banner_color || BANNER_COLORS[0];
+  const statusText = user.status_text;
+  const statusEmoji = user.status_emoji;
+
   return (
     <div className="space-y-5">
       <Toast message={toast} />
 
+      {/* Banner + profile card (Discord style) */}
       <header className="card relative overflow-hidden">
-        <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-fuchsia-500/20 blur-2xl" />
-        <div className="flex items-center gap-4">
-          <Avatar emoji={user.avatar} file={user.avatar_file} size="xl" />
-          <div className="flex-1">
-            <h1 className="font-display text-2xl font-extrabold">{user.display_name}</h1>
-            <div className="text-sm text-white/50">@{user.username}</div>
-            {user.bio && <div className="mt-1 text-sm italic text-white/60">{user.bio}</div>}
-            <div className="mt-2 flex gap-2">
-              <span className="chip bg-fuchsia-500/20 text-fuchsia-300">💎 {stats.total_points} pts</span>
-              <span className="chip bg-white/10 text-white/60"># {stats.rank} rank</span>
-              <span className={`chip ${stats.streak > 0 ? "bg-orange-500/20 text-orange-300" : "bg-white/10 text-white/40"}`}>
-                🔥 {stats.streak}-day streak
+        <div
+          className="relative h-24 w-full"
+          style={{ background: `linear-gradient(135deg, ${banner} 0%, ${banner}88 100%)` }}
+        >
+          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 20% 80%, white, transparent 40%)" }} />
+        </div>
+        <div className="relative px-4 pb-4">
+          <div className="-mt-10 flex items-end gap-3">
+            <button onClick={() => fileRef.current?.click()} title="Change photo">
+              <Avatar emoji={user.avatar} file={user.avatar_file} size="xl" />
+            </button>
+            <div className="flex-1 pb-1">
+              <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold">
+                {user.display_name}
+                <span title={lvlTitle}>{lvlIcon}</span>
+              </h1>
+              <div className="flex items-center gap-2 text-sm text-white/50">
+                @{user.username}
+                {user.pronouns && (
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/50">
+                    {user.pronouns}
+                  </span>
+                )}
+                {statusEmoji || statusText ? (
+                  <span className="text-xs text-fuchsia-300/90">
+                    {statusEmoji} {statusText}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+            <button className="btn-ghost !px-3 !py-1.5 !text-xs" onClick={() => setEditing(true)}>
+              Edit
+            </button>
+          </div>
+          {user.bio && <div className="mt-2 text-sm italic text-white/60">{user.bio}</div>}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="chip bg-fuchsia-500/20 text-fuchsia-300">💎 {stats.total_points} pts</span>
+            <span className="chip bg-white/10 text-white/60">
+              {lvlIcon} {lvlTitle} · Lv{prog.level}
+            </span>
+            <span className="chip bg-white/10 text-white/60"># {stats.rank} rank</span>
+            <span className={`chip ${stats.streak > 0 ? "bg-orange-500/20 text-orange-300" : "bg-white/10 text-white/40"}`}>
+              🔥 {stats.streak}-day streak
+            </span>
+            <span className="chip bg-sky-500/15 text-sky-300">🛡️ {user.streak_shields || 0}</span>
+          </div>
+          <div className="mt-2">
+            <div className="mb-1 flex justify-between text-[10px] font-bold text-white/40">
+              <span>
+                {lvlIcon} Lv{prog.level} → Lv{prog.level + 1}
+              </span>
+              <span>
+                {prog.into}/{prog.span} pts
               </span>
             </div>
+            <ProgressBar value={prog.fraction * 100} className="!bg-white/5" />
           </div>
-          <button className="btn-ghost !px-3 !py-1.5 !text-xs" onClick={() => setEditing(true)}>
-            Edit
-          </button>
         </div>
       </header>
 
@@ -152,6 +226,19 @@ export function ProfilePage() {
             {t("profile.favorite")}: <span className="text-amber-300">{stats.favorite_category}</span>
           </div>
         )}
+      </section>
+
+      {/* Streak shield */}
+      <section className="card space-y-2">
+        <h2 className="font-display text-lg font-bold">🛡️ {t("profile.shields")}</h2>
+        <p className="text-xs text-white/50">{t("profile.shieldsHint")}</p>
+        <button
+          className="btn-primary w-full"
+          onClick={() => buyShield.mutate()}
+          disabled={buyShield.isPending || (user.total_points ?? 0) < 50}
+        >
+          {buyShield.isPending ? "…" : `Buy shield — 50 pts (${user.total_points ?? 0} available)`}
+        </button>
       </section>
 
       {/* Settings */}
@@ -200,6 +287,14 @@ export function ProfilePage() {
             📲 {t("profile.install")}
           </button>
         )}
+        <Link
+          to="https://buymeacoffee.com/rakso8080"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-ghost w-full"
+        >
+          ☕ Support SideQuest
+        </Link>
         <Link to="/admin" className="btn-ghost w-full">
           🛠️ {t("profile.admin")}
         </Link>
@@ -252,7 +347,7 @@ export function ProfilePage() {
       {editing && (
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setEditing(false)} />
-          <div className="relative z-10 w-full max-w-lg animate-slide-up rounded-t-3xl bg-panel p-5 sm:rounded-3xl">
+          <div className="relative z-10 max-h-[90vh] w-full max-w-lg animate-slide-up overflow-y-auto rounded-t-3xl bg-panel p-5 sm:rounded-3xl">
             <h2 className="mb-4 font-display text-xl font-bold">{t("profile.editProfile")}</h2>
             <div className="space-y-3">
               <input
@@ -273,6 +368,53 @@ export function ProfilePage() {
                 value={form.bio}
                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
               />
+              <input
+                className="input"
+                placeholder='Status — e.g. "out on a quest"'
+                value={form.status_text}
+                maxLength={120}
+                onChange={(e) => setForm({ ...form, status_text: e.target.value })}
+              />
+              <div>
+                <div className="mb-1.5 text-xs font-bold text-white/50">Status emoji</div>
+                <div className="grid grid-cols-8 gap-1">
+                  {["🟢", "🎮", "🏋️", "🧠", "🛌", "⚡", "🎧", "🌮", "💼", "🏃", "🧘", "🍕", "📚", "🎬", "⛰️", "💪"].map((e) => (
+                    <button
+                      key={e}
+                      type="button"
+                      onClick={() => setForm({ ...form, status_emoji: e })}
+                      className={`rounded-lg py-1.5 text-lg transition ${
+                        form.status_emoji === e ? "bg-violet-500/40 ring-1 ring-violet-300" : "bg-white/5"
+                      }`}
+                    >
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <input
+                className="input"
+                placeholder="Pronouns — e.g. they/them"
+                value={form.pronouns}
+                maxLength={40}
+                onChange={(e) => setForm({ ...form, pronouns: e.target.value })}
+              />
+              <div>
+                <div className="mb-1.5 text-xs font-bold text-white/50">Banner color</div>
+                <div className="flex flex-wrap gap-2">
+                  {BANNER_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setForm({ ...form, banner_color: c })}
+                      className={`h-8 w-8 rounded-full transition ${
+                        form.banner_color === c ? "ring-2 ring-white" : "ring-1 ring-white/20"
+                      }`}
+                      style={{ background: c }}
+                    />
+                  ))}
+                </div>
+              </div>
               <div>
                 <div className="mb-1.5 text-xs font-bold text-white/50">{t("profile.profilePhoto")}</div>
                 <input

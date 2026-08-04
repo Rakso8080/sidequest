@@ -9,6 +9,17 @@ import { VotingCard } from "../components/VotingCard";
 import { RANK_EMOJI } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 
+interface DailyQuest {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  difficulty: string;
+  points: number;
+  proof_type: string;
+  date: string;
+}
+
 export function DashboardPage() {
   const { user } = useAuth();
   const { t } = useI18n();
@@ -17,11 +28,17 @@ export function DashboardPage() {
     queryFn: () => api.get("/dashboard"),
     refetchInterval: 20_000,
   });
+  const { data: daily } = useQuery<DailyQuest>({
+    queryKey: ["daily-quest"],
+    queryFn: () => api.get("/quests/daily"),
+    staleTime: 60 * 60 * 1000,
+  });
 
   if (isLoading || !data) return <PageLoader />;
 
   const { stats, active_quests, pending_votes, leaderboard, my_punishments, unread_notifications } = data;
   const name = user?.display_name?.split(" ")[0] ?? "Player";
+  const mvp = leaderboard.find((e) => !e.is_admin && e.rank === 1) ?? leaderboard[0];
 
   return (
     <div className="space-y-5">
@@ -44,6 +61,42 @@ export function DashboardPage() {
           )}
         </Link>
       </header>
+
+      {/* Daily quest banner */}
+      {daily && (
+        <Link
+          to="/quests"
+          className="card relative block overflow-hidden !p-4"
+          style={{ background: "linear-gradient(135deg, rgba(124,58,237,.25), rgba(219,39,119,.15))" }}
+        >
+          <div className="absolute right-3 top-2 text-5xl opacity-40">🎁</div>
+          <div className="text-[10px] font-extrabold uppercase tracking-widest text-fuchsia-300">
+            {t("dashboard.daily")} · {daily.date}
+          </div>
+          <div className="mt-1 font-display text-lg font-extrabold leading-tight">{daily.title}</div>
+          <div className="mt-0.5 line-clamp-1 text-xs text-white/50">{daily.description}</div>
+          <div className="mt-2 flex gap-2">
+            <span className="chip bg-fuchsia-500/25 text-fuchsia-200">+{daily.points} pts</span>
+            <span className="chip bg-white/10 text-white/60">{daily.category}</span>
+          </div>
+        </Link>
+      )}
+
+      {/* MVP of the week */}
+      {mvp && mvp.user_id !== user?.id && (
+        <div className="card flex items-center gap-3 !p-3.5">
+          <div className="text-3xl">👑</div>
+          <Avatar emoji={mvp.avatar} file={mvp.avatar_file} size="sm" />
+          <div className="flex-1">
+            <div className="text-xs font-bold text-amber-300">{t("dashboard.mvp")}</div>
+            <div className="text-sm font-extrabold">{mvp.display_name}</div>
+          </div>
+          <div className="text-right">
+            <div className="font-display text-lg font-extrabold text-fuchsia-300">{mvp.total_points}</div>
+            <div className="text-[10px] text-white/40">🔥 {mvp.streak}</div>
+          </div>
+        </div>
+      )}
 
       {/* Stats strip */}
       <div className="grid grid-cols-4 gap-2">

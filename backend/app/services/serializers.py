@@ -14,6 +14,7 @@ from ..schemas import (
     SubmissionOut,
     VoteOut,
 )
+from .levels import icon_for, level_for, title_for
 from .settings import get_settings
 
 
@@ -139,6 +140,14 @@ def leaderboard(db: Session, squad: models.Squad) -> List[LeaderboardEntryOut]:
     return entries
 
 
+def mvp(squad: models.Squad) -> Optional[models.User]:
+    """Most Valuable Player: highest points this week, admin excluded."""
+    members = [m for m in squad.members if m.squad_id == squad.id and m.id != squad.admin_id]
+    if not members:
+        return None
+    return max(members, key=lambda m: (m.total_points, m.streak))
+
+
 def compute_stats(db: Session, user: models.User, squad: models.Squad) -> StatsOut:
     base = db.query(models.Submission).filter(models.Submission.user_id == user.id)
     approved = base.filter(models.Submission.status == "approved").all()
@@ -159,6 +168,13 @@ def compute_stats(db: Session, user: models.User, squad: models.Squad) -> StatsO
             break
 
     badges: List[BadgeOut] = []
+    badges.append(
+        BadgeOut(
+            key=f"level_{level_for(user.total_points)}",
+            label=f"{title_for(user.total_points)}",
+            icon=icon_for(user.total_points),
+        )
+    )
     if approved_count >= 1:
         badges.append(BadgeOut(key="first_quest", label="First quest", icon="🌱"))
     if approved_count >= 10:

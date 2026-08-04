@@ -36,16 +36,18 @@ export function Avatar({
 }: {
   emoji: string;
   file?: string | null;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
 }) {
   const cls =
-    size === "sm"
-      ? "h-8 w-8 text-lg"
-      : size === "lg"
-        ? "h-14 w-14 text-3xl"
-        : size === "xl"
-          ? "h-20 w-20 text-5xl"
-          : "h-11 w-11 text-2xl";
+    size === "xs"
+      ? "h-7 w-7 text-sm"
+      : size === "sm"
+        ? "h-8 w-8 text-lg"
+        : size === "lg"
+          ? "h-14 w-14 text-3xl"
+          : size === "xl"
+            ? "h-20 w-20 text-5xl"
+            : "h-11 w-11 text-2xl";
   if (file) {
     return (
       <img

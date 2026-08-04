@@ -19,6 +19,8 @@ if SECRET_KEY == DEFAULT_SECRET:
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Oskar")
 
+GIPHY_API_KEY = os.environ.get("GIPHY_API_KEY", "")
+
 _cors = [o.strip() for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
 CORS_ORIGINS = _cors or ["*"]
 

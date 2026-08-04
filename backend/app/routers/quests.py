@@ -37,6 +37,7 @@ def _quest_out(db: Session, quest: Quest, user: User) -> QuestOut:
         time_limit_hours=quest.time_limit_hours,
         is_active=quest.is_active,
         scheduled_for=quest.scheduled_for,
+        squad_quest=quest.squad_quest,
         created_by=quest.created_by,
         created_by_name=creator.display_name if creator else None,
         my_status=my.status if my else None,
@@ -53,6 +54,30 @@ def _validate_quest_fields(payload, settings) -> None:
         raise HTTPException(status_code=400, detail="Invalid difficulty")
     if payload.proof_type not in VALID_PROOF_TYPES:
         raise HTTPException(status_code=400, detail="Invalid proof type")
+
+
+def _notify_mentions(db, squad, actor: User, title: str, description: str) -> None:
+    """Find @username mentions in the text and ping those squad members."""
+    import re
+
+    handles = set(re.findall(r"@([a-zA-Z0-9_]{2,60})", f"{title} {description}"))
+    if not handles:
+        return
+    members = {
+        m.username: m for m in squad.members if m.squad_id == squad.id and m.id != actor.id
+    }
+    for h in handles:
+        target = members.get(h.lower())
+        if target is None:
+            continue
+        notify(
+            db,
+            target.id,
+            squad.id,
+            "You've been mentioned 📣",
+            f"{actor.display_name} mentioned you in “{title}”.",
+            ntype="mention",
+        )
 
 
 @router.get("", response_model=List[QuestOut])
@@ -144,6 +169,7 @@ def plan_quest(
     )
     db.add(quest)
     db.flush()
+    _notify_mentions(db, squad, user, quest.title, quest.description)
     for member in squad.members:
         if member.squad_id == squad.id and member.id != user.id:
             notify(
@@ -170,6 +196,8 @@ def create_quest(
     _validate_quest_fields(payload, settings)
     quest = Quest(squad_id=squad.id, is_active=True, created_by=admin.id, **payload.model_dump())
     db.add(quest)
+    db.flush()
+    _notify_mentions(db, squad, admin, quest.title, quest.description)
     db.flush()
     return _quest_out(db, quest, admin)
 
@@ -213,6 +241,36 @@ def categories(
 ):
     squad = get_user_squad(db, user)
     return {"categories": get_settings(squad).get("categories", [])}
+
+
+@router.get("/daily")
+def daily_quest(
+    user: User = Depends(require_member), db: Session = Depends(get_db)
+):
+    """Deterministic 'Quest of the Day' for the squad, seeded by date so
+    everyone sees the same challenge on the same day."""
+    from datetime import date
+
+    import hashlib
+
+    from ..models import GlobalQuest
+
+    squad = get_user_squad(db, user)
+    templates = db.query(GlobalQuest).all()
+    if not templates:
+        raise HTTPException(status_code=404, detail="No quest templates")
+    seed = int(hashlib.sha256(f"{squad.id}:{date.today().isoformat()}".encode()).hexdigest(), 16)
+    q = templates[seed % len(templates)]
+    return {
+        "id": q.id,
+        "title": q.title,
+        "description": q.description,
+        "category": q.category,
+        "difficulty": q.difficulty,
+        "points": q.points,
+        "proof_type": q.proof_type,
+        "date": date.today().isoformat(),
+    }
 
 
 def _proposal_out(proposal: QuestProposal, viewer_id: int) -> QuestProposalOut:
@@ -263,6 +321,7 @@ def propose_quest(
             f"{user.display_name} suggests “{proposal.title}” (+{proposal.points} pts)",
             ntype="proposal",
         )
+    _notify_mentions(db, squad, user, proposal.title, proposal.description)
     db.flush()
     return _proposal_out(proposal, user.id)
 

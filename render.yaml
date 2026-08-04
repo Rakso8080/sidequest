@@ -27,5 +27,7 @@ services:
         value: /app/frontend/dist
       - key: UPLOAD_DIR
         value: /app/uploads
+      - key: GIPHY_API_KEY
+        sync: false
     healthCheckPath: /health
     autoDeploy: true

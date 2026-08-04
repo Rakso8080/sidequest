@@ -43,6 +43,15 @@ class User(Base):
     last_streak_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
+    # Advanced profile fields (Discord/Telegram style)
+    status_text: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    status_emoji: Mapped[Optional[str]] = mapped_column(String(8), nullable=True)
+    pronouns: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    banner_color: Mapped[Optional[str]] = mapped_column(String(9), nullable=True)
+    last_seen: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_read_id: Mapped[int] = mapped_column(Integer, default=0)
+    streak_shields: Mapped[int] = mapped_column(Integer, default=0)
+
     squad: Mapped[Optional["Squad"]] = relationship(
         back_populates="members", foreign_keys=[squad_id]
     )
@@ -82,6 +91,7 @@ class Quest(Base):
     time_limit_hours: Mapped[int] = mapped_column(Integer, default=72)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     scheduled_for: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    squad_quest: Mapped[bool] = mapped_column(Boolean, default=False)
     created_by: Mapped[Optional[int]] = mapped_column(
         ForeignKey("users.id"), nullable=True
     )
@@ -139,13 +149,43 @@ class ChatMessage(Base):
     recipient_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("users.id"), nullable=True
     )
+    reply_to_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("chat_messages.id"), nullable=True
+    )
     sticker: Mapped[Optional[str]] = mapped_column(String(8), nullable=True)
+    gif_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    gif_thumb: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    edited: Mapped[bool] = mapped_column(Boolean, default=False)
+    pinned: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=utcnow, server_default=func.now()
     )
 
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
+    reply_to: Mapped[Optional["ChatMessage"]] = relationship(
+        foreign_keys=[reply_to_id], remote_side=[id]
+    )
+    reactions: Mapped[List["ChatReaction"]] = relationship(
+        back_populates="message", cascade="all, delete-orphan"
+    )
+
+
+class ChatReaction(Base):
+    __tablename__ = "chat_reactions"
+    __table_args__ = (
+        UniqueConstraint("message_id", "user_id", "emoji", name="uq_reaction"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    message_id: Mapped[int] = mapped_column(
+        ForeignKey("chat_messages.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    emoji: Mapped[str] = mapped_column(String(16))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    message: Mapped["ChatMessage"] = relationship(back_populates="reactions")
 
 
 class Submission(Base):

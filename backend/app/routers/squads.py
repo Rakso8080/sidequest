@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..deps import get_current_user, require_admin
+from ..deps import get_current_user, is_online, require_admin
 from ..models import Squad, User
 from ..schemas import (
     CreateSquadIn,
@@ -32,10 +32,17 @@ def _squad_out(db: Session, squad: Squad) -> SquadOut:
                 display_name=m.display_name,
                 username=m.username,
                 avatar=m.avatar,
+                avatar_file=m.avatar_file,
                 bio=m.bio,
                 total_points=m.total_points,
                 streak=m.streak,
                 is_admin=m.id == squad.admin_id,
+                status_text=m.status_text,
+                status_emoji=m.status_emoji,
+                pronouns=m.pronouns,
+                banner_color=m.banner_color,
+                online=is_online(m),
+                last_seen=m.last_seen,
             )
         )
     return SquadOut(

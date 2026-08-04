@@ -22,6 +22,7 @@ export function NewQuestModal({
     points: 50,
     proof_type: "photo",
     time_limit_hours: 72,
+    squad_quest: false,
   });
   const [error, setError] = useState("");
 
@@ -107,6 +108,20 @@ export function NewQuestModal({
               +
             </button>
           </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2">
+          <div>
+            <span className="text-xs font-bold text-white/50">👥 Squad quest</span>
+            <div className="text-[10px] text-white/35">Everyone must submit or everyone loses points</div>
+          </div>
+          <button
+            className={`h-8 w-14 rounded-full p-1 transition ${form.squad_quest ? "bg-rose-500" : "bg-white/10"}`}
+            onClick={() => setForm({ ...form, squad_quest: !form.squad_quest })}
+            aria-label="Squad quest"
+          >
+            <div className={`h-6 w-6 rounded-full bg-white transition ${form.squad_quest ? "translate-x-6" : ""}`} />
+          </button>
         </div>
 
         {error && <div className="rounded-lg bg-rose-500/15 px-3 py-2 text-xs font-bold text-rose-300">{error}</div>}

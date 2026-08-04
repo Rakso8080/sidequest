@@ -30,6 +30,11 @@ class UserOut(BaseModel):
     total_points: int
     streak: int
     created_at: datetime
+    status_text: Optional[str] = None
+    status_emoji: Optional[str] = None
+    pronouns: Optional[str] = None
+    banner_color: Optional[str] = None
+    streak_shields: int = 0
 
     class Config:
         from_attributes = True
@@ -45,6 +50,10 @@ class UpdateProfileIn(BaseModel):
     username: Optional[str] = None
     avatar: Optional[str] = None
     bio: Optional[str] = None
+    status_text: Optional[str] = None
+    status_emoji: Optional[str] = None
+    pronouns: Optional[str] = None
+    banner_color: Optional[str] = None
 
 
 class CreateSquadIn(BaseModel):
@@ -81,6 +90,12 @@ class MemberOut(BaseModel):
     total_points: int
     streak: int
     is_admin: bool
+    status_text: Optional[str] = None
+    status_emoji: Optional[str] = None
+    pronouns: Optional[str] = None
+    banner_color: Optional[str] = None
+    online: bool = False
+    last_seen: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -104,6 +119,7 @@ class QuestIn(BaseModel):
     proof_type: str = "photo"
     time_limit_hours: int = Field(ge=1, le=24 * 30)
     scheduled_for: Optional[datetime] = None
+    squad_quest: bool = False
 
 
 class QuestOut(BaseModel):
@@ -117,6 +133,7 @@ class QuestOut(BaseModel):
     time_limit_hours: int
     is_active: bool
     scheduled_for: Optional[datetime] = None
+    squad_quest: bool = False
     created_by: Optional[int] = None
     created_by_name: Optional[str] = None
     my_status: Optional[str] = None  # in_progress | pending | submitted/approved/etc
@@ -215,6 +232,13 @@ class NotificationOut(BaseModel):
     created_at: datetime
 
 
+class ChatReactionOut(BaseModel):
+    emoji: str
+    users: List[int]
+    count: int
+    mine: bool
+
+
 class ChatMessageOut(BaseModel):
     id: int
     user_id: int
@@ -222,8 +246,16 @@ class ChatMessageOut(BaseModel):
     user_avatar: str
     user_avatar_file: Optional[str] = None
     recipient_id: Optional[int] = None
+    reply_to_id: Optional[int] = None
+    reply_snippet: Optional[str] = None
+    reply_user_name: Optional[str] = None
     text: Optional[str] = None
     sticker: Optional[str] = None
+    gif_url: Optional[str] = None
+    gif_thumb: Optional[str] = None
+    edited: bool = False
+    pinned: bool = False
+    reactions: List[ChatReactionOut] = []
     created_at: datetime
 
 
@@ -231,6 +263,24 @@ class ChatIn(BaseModel):
     text: Optional[str] = Field(default=None, max_length=2000)
     sticker: Optional[str] = Field(default=None, max_length=8)
     recipient_id: Optional[int] = None
+    reply_to_id: Optional[int] = None
+    gif_url: Optional[str] = Field(default=None, max_length=500)
+    gif_thumb: Optional[str] = Field(default=None, max_length=500)
+
+
+class ChatEditIn(BaseModel):
+    text: Optional[str] = Field(default=None, max_length=2000)
+
+
+class ChatReactIn(BaseModel):
+    emoji: str = Field(min_length=1, max_length=16)
+
+
+class GifOut(BaseModel):
+    url: str
+    thumb: str
+    width: int = 0
+    height: int = 0
 
 
 class LeaderboardEntryOut(BaseModel):

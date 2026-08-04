@@ -26,11 +26,13 @@ from .routers import (
     votes,
 )
 from .services.seed import seed_demo, seed_global_quests
+from .services.migrations import run_migrations
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    run_migrations(engine)
     db = SessionLocal()
     try:
         seed_global_quests(db)
