@@ -3,7 +3,11 @@ __pycache__/
 *.pyc
 .venv/
 backend/app.db
+backend/app.db-shm
+backend/app.db-wal
 backend/test_smoke.db
+backend/test_smoke.db-shm
+backend/test_smoke.db-wal
 backend/uploads/
 backend/.env
 
