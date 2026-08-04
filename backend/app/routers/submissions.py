@@ -1,28 +1,27 @@
 from __future__ import annotations
 
-import os
-import uuid
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from ..database import UPLOAD_DIR, get_db
+from ..database import get_db
 from ..deps import get_user_squad, require_member
 from ..models import Notification, Submission, User
 from ..schemas import SubmissionOut
 from ..services.notifications import notify
 from ..services.serializers import submission_out
+from ..services.storage import save_upload
 from ..services.voting import sync_submission, utcnow
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
 ALLOWED_IMAGE = {"jpg", "jpeg", "png", "gif", "webp", "heic"}
 ALLOWED_VIDEO = {"mp4", "mov", "webm", "m4v"}
-MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+MAX_UPLOAD_BYTES = 12 * 1024 * 1024
 
 
-def _save_upload(file: UploadFile) -> str:
+def _save_upload(file: UploadFile, db: Session) -> str:
     ext = (file.filename or "").rsplit(".", 1)[-1].lower()
     if ext not in ALLOWED_IMAGE and ext not in ALLOWED_VIDEO:
         raise HTTPException(
@@ -31,11 +30,9 @@ def _save_upload(file: UploadFile) -> str:
         )
     content = file.file.read(MAX_UPLOAD_BYTES + 1)
     if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=400, detail="File too large (max 50 MB)")
-    name = f"{uuid.uuid4().hex}.{ext}"
-    with open(os.path.join(UPLOAD_DIR, name), "wb") as fh:
-        fh.write(content)
-    return f"/uploads/{name}"
+        raise HTTPException(status_code=400, detail="File too large (max 12 MB)")
+    content_type = file.content_type or "application/octet-stream"
+    return save_upload(db, content, file.filename or "", content_type)
 
 
 @router.get("", response_model=List[SubmissionOut])
@@ -111,7 +108,7 @@ async def submit_proof(
             status_code=400, detail="This submission is not in progress"
         )
     if file is not None:
-        sub.proof_file = _save_upload(file)
+        sub.proof_file = _save_upload(file, db)
     sub.proof_text = proof_text.strip()
     if not sub.proof_file and not sub.proof_text:
         raise HTTPException(

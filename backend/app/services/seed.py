@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import random
 import struct
 import zlib
@@ -10,9 +9,9 @@ from typing import Dict, List
 from sqlalchemy.orm import Session
 
 from .. import models
-from ..database import UPLOAD_DIR
 from ..security import hash_password
 from .settings import DEFAULT_SETTINGS
+from .storage import save_upload
 
 DEFAULT_QUESTS: List[Dict] = [
     {"title": "Morning run 5k", "description": "Run 5km before noon and log your time.", "category": "Fitness", "difficulty": "medium", "points": 60, "proof_type": "photo", "time_limit_hours": 24},
@@ -44,8 +43,8 @@ def create_quests_from_templates(db: Session, squad: models.Squad) -> None:
         db.add(models.Quest(squad_id=squad.id, is_active=True, **q))
 
 
-def write_demo_png(path: str, width: int, height: int, rgb: tuple) -> None:
-    """Write a tiny solid-color PNG so the demo has real photo proofs to show."""
+def write_demo_png(path: str, width: int, height: int, rgb: tuple) -> bytes:
+    """Build a tiny solid-color PNG so the demo has real photo proofs to show."""
     def chunk(typ: bytes, data: bytes) -> bytes:
         c = struct.pack(">I", len(data)) + typ + data
         c += struct.pack(">I", zlib.crc32(typ + data) & 0xFFFFFFFF)
@@ -56,8 +55,7 @@ def write_demo_png(path: str, width: int, height: int, rgb: tuple) -> None:
     sig = b"\x89PNG\r\n\x1a\n"
     ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
     idat = zlib.compress(raw)
-    with open(path, "wb") as fh:
-        fh.write(sig + chunk(b"IHDR", ihdr) + chunk(b"IDAT", idat) + chunk(b"IEND", b""))
+    return sig + chunk(b"IHDR", ihdr) + chunk(b"IDAT", idat) + chunk(b"IEND", b"")
 
 
 def generate_invite_code(db: Session) -> str:
@@ -146,13 +144,12 @@ def seed_demo(db: Session) -> None:
             )
             if q.proof_type == "photo":
                 fname = f"demo_photo_{photo_index}.png"
-                write_demo_png(
-                    os.path.join(UPLOAD_DIR, fname),
-                    640,
-                    480,
-                    demo_colors[photo_index % len(demo_colors)],
+                sub.proof_file = save_upload(
+                    db,
+                    write_demo_png("", 640, 480, demo_colors[photo_index % len(demo_colors)]),
+                    fname,
+                    "image/png",
                 )
-                sub.proof_file = f"/uploads/{fname}"
                 photo_index += 1
             db.add(sub)
             user.total_points += q.points

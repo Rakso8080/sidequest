@@ -95,7 +95,28 @@ python smoke_test.py   # end-to-end API test (register → join → quest → su
 
 ## Deployment
 
-### Option A — Docker + Caddy (recommended for a VPS)
+### Option A — Render (free) + Neon Postgres (recommended)
+
+The included `render.yaml` Blueprint deploys to Render as a free web service.
+Proof photos are stored in the database (free tiers have no persistent disk),
+so nothing is lost when the service restarts.
+
+1. **Create a free Neon database** at https://neon.tech — copy the connection
+   string (looks like `postgresql://user:pass@host/db`).
+2. **Create a free Render account** at https://render.com → **New → Blueprint**,
+   connect this GitHub repo (`Rakso8080/sidequest`). Render detects
+   `render.yaml` and builds the Docker image automatically.
+3. In the service's **Environment** tab, set:
+   - `DATABASE_URL` → your Neon connection string
+   - `CORS_ORIGINS` → `https://sidequest.onrender.com` (your Render URL)
+   - `SECRET_KEY` → a long random string (Render can auto-generate)
+4. Deploy, wait a couple of minutes, open `https://sidequest.onrender.com`.
+
+Free-tier notes: the service sleeps after ~15 min of inactivity and wakes on
+the next visit (first load can take ~30s). Neon's free DB pauses after idle;
+set "Suspend compute" to off in Neon for always-ready DB.
+
+### Option B — Docker + Caddy (VPS)
 
 The included `Dockerfile` builds the frontend with Node and serves both the SPA
 and the API from a single Python container, so you only need one process.
@@ -123,7 +144,7 @@ and the API from a single Python container, so you only need one process.
 Persistent data lives in Docker volumes (`sidequest-data` for the DB,
 `sidequest-uploads` for proof photos).
 
-### Option B — same-origin production build
+### Option C — same-origin production build
 
 1. Build the frontend: `cd frontend && npm run build`.
 2. Run only the backend — `STATIC_DIR` defaults to `frontend/dist`, so FastAPI
@@ -141,18 +162,15 @@ Persistent data lives in Docker volumes (`sidequest-data` for the DB,
 | Env var            | Purpose                                                        | Default |
 | ------------------ | -------------------------------------------------------------- | ------- |
 | `SECRET_KEY`       | JWT signing key — **set a strong value in prod**               | dev default (warns) |
-| `DATABASE_URL`     | SQLAlchemy URL; swap to Postgres for real scale                | local SQLite |
+| `DATABASE_URL`     | SQLAlchemy URL; swap to free Postgres for deployment           | local SQLite |
 | `CORS_ORIGINS`     | Comma-separated allowed browser origins                        | `*` in dev |
 | `STATIC_DIR`       | Directory of the built SPA                                     | `frontend/dist` |
-| `UPLOAD_DIR`       | Proof photo/video storage directory                            | `backend/uploads` |
+| `UPLOAD_DIR`       | Reserved; proofs are stored in the DB so they survive restarts | `backend/uploads` |
 
 **Frontend**: for a remote API, set `VITE_API_BASE` at build time so the app
 knows the API origin (it defaults to same-origin, which works in the setups
-above):
-
-```bash
-cd frontend && VITE_API_BASE=https://your.domain npm run build
-```
+above). Render builds from source, so this defaults to the Render URL —
+no change needed there.
 
 ### Free database options
 

@@ -1,0 +1,31 @@
+# Render Blueprint — deploys SideQuest as a free web service from Docker.
+#
+# Setup:
+#  1. Create a free Neon database (neon.tech) and copy its connection string.
+#  2. Create a free Render account (render.com) → "New → Blueprint",
+#     connect this GitHub repo. Render auto-detects this file.
+#  3. In the service's Environment, set DATABASE_URL to the Neon string.
+#
+# Note: Render's free web tier has no persistent disk, so all proof photos
+# are stored in the database (see backend/app/services/storage.py).
+
+services:
+  - type: web
+    name: sidequest
+    runtime: docker
+    repo: https://github.com/Rakso8080/sidequest
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: STATIC_DIR
+        value: /app/frontend/dist
+      - key: UPLOAD_DIR
+        value: /app/uploads
+    healthCheckPath: /health
+    autoDeploy: true

@@ -18,5 +18,4 @@ ENV STATIC_DIR=/app/frontend/dist \
     UPLOAD_DIR=/app/uploads
 
 EXPOSE 8000
-VOLUME ["/app/uploads"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -15,6 +15,11 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 _connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(DATABASE_URL, connect_args=_connect_args)
+
+if DATABASE_URL.startswith("sqlite"):
+    # Allow concurrent reads while a request writes (uploads now live in the DB).
+    with engine.connect() as conn:
+        conn.execute(text("PRAGMA journal_mode=WAL"))
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 

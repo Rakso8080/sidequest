@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends
@@ -10,11 +9,9 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import get_user_squad, require_member
-from ..models import Quest, Submission, User
+from ..models import Quest, Submission, UploadedFile, User
 
 router = APIRouter(prefix="/recap", tags=["recap"])
-
-IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic", ".heif"}
 
 
 class RecapItemOut(BaseModel):
@@ -58,10 +55,24 @@ def get_recap(
         q = q.filter(func.strftime("%Y", Submission.resolved_at) == str(year))
     subs = q.order_by(Submission.resolved_at.asc()).all()
 
+    upload_ids = []
+    for s in subs:
+        if s.proof_file and s.proof_file.startswith("/uploads/"):
+            try:
+                upload_ids.append(int(s.proof_file.rsplit("/", 1)[-1]))
+            except ValueError:
+                pass
+    content_types = {
+        uf.id: uf.content_type
+        for uf in db.query(UploadedFile).filter(UploadedFile.id.in_(upload_ids)).all()
+    }
+
     items = []
     for s in subs:
-        ext = os.path.splitext(s.proof_file or "")[1].lower()
-        if ext not in IMG_EXTS:
+        if not s.proof_file or not s.proof_file.startswith("/uploads/"):
+            continue
+        fid = int(s.proof_file.rsplit("/", 1)[-1])
+        if not content_types.get(fid, "").startswith("image/"):
             continue  # montage is photo-based; skip video proofs
         items.append(
             RecapItemOut(

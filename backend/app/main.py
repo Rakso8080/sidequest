@@ -6,10 +6,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
-
 from .config import CORS_ORIGINS, STATIC_DIR
-from .database import Base, UPLOAD_DIR, SessionLocal, engine
+from .database import Base, SessionLocal, engine
 from .routers import (
     auth,
     chat,
@@ -21,6 +19,7 @@ from .routers import (
     recap,
     squads,
     submissions,
+    uploads,
     users,
     votes,
 )
@@ -54,8 +53,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-
 for r in (
     auth,
     users,
@@ -68,6 +65,7 @@ for r in (
     notifications,
     chat,
     recap,
+    uploads,
     overview,
 ):
     app.include_router(r.router)

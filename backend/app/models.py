@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -160,7 +161,6 @@ class Vote(Base):
     __table_args__ = (
         UniqueConstraint("submission_id", "voter_id", name="uq_vote"),
     )
-
     id: Mapped[int] = mapped_column(primary_key=True)
     submission_id: Mapped[int] = mapped_column(
         ForeignKey("submissions.id", ondelete="CASCADE"), index=True
@@ -205,6 +205,22 @@ class Notification(Base):
     title: Mapped[str] = mapped_column(String(160))
     body: Mapped[str] = mapped_column(Text, default="")
     read: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utcnow, server_default=func.now()
+    )
+
+
+class UploadedFile(Base):
+    """Photo/video proof stored in the database so it survives server
+    restarts on hosts with no persistent disk (e.g. free-tier web apps)."""
+
+    __tablename__ = "uploaded_files"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    filename: Mapped[str] = mapped_column(String(255))
+    content_type: Mapped[str] = mapped_column(String(120), default="application/octet-stream")
+    size: Mapped[int] = mapped_column(Integer, default=0)
+    data: Mapped[bytes] = mapped_column(LargeBinary)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=utcnow, server_default=func.now()
     )
