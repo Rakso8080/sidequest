@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { sfx } from "../lib/sound";
 
 export function Modal({
   open,
@@ -41,6 +42,9 @@ export function Modal({
 }
 
 export function Toast({ message }: { message: string | null }) {
+  useEffect(() => {
+    if (message) sfx.ding();
+  }, [message]);
   if (!message) return null;
   return (
     <div className="fixed left-1/2 top-4 z-[60] -translate-x-1/2 animate-slide-up">

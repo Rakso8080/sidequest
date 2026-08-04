@@ -5,6 +5,7 @@ import type { Quest } from "../types";
 import { Modal } from "./modal";
 import { Confetti } from "./ui";
 import { difficultyStyle, proofLabel } from "../lib/format";
+import { sfx } from "../lib/sound";
 
 const COLORS = [
   "#8b5cf6",
@@ -107,6 +108,7 @@ export function SpinWheelModal({
     if (spinning || quests.length === 0) return;
     setSpinning(true);
     setLanded(null);
+    sfx.pop();
     const n = quests.length;
     const target = Math.floor(Math.random() * n);
     const seg = (2 * Math.PI) / n;
@@ -120,17 +122,24 @@ export function SpinWheelModal({
     const duration = 4500;
     const t0 = performance.now();
     const ease = (t: number) => 1 - Math.pow(1 - t, 4);
+    let lastTickSeg = -1;
 
     const step = (now: number) => {
       const t = Math.min(1, (now - t0) / duration);
       rotRef.current = startRot + (totalRot - startRot) * ease(t);
       draw(rotRef.current);
+      const segNow = Math.floor(((-rotRef.current) % (2 * Math.PI) + 2 * Math.PI) / seg);
+      if (segNow !== lastTickSeg) {
+        lastTickSeg = segNow;
+        sfx.tick();
+      }
       if (t < 1) {
         requestAnimationFrame(step);
       } else {
         setSpinning(false);
         setLanded(quests[target]);
         setCelebrate(true);
+        sfx.land();
         window.setTimeout(() => setCelebrate(false), 1600);
       }
     };

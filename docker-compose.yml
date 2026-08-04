@@ -1,0 +1,19 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - backend/.env
+    environment:
+      - STATIC_DIR=/app/frontend/dist
+      - UPLOAD_DIR=/app/uploads
+      - DATABASE_URL=sqlite:////app/data/sidequest.db
+    volumes:
+      - sidequest-data:/app/data
+      - sidequest-uploads:/app/uploads
+    ports:
+      - "127.0.0.1:8000:8000"
+
+volumes:
+  sidequest-data:
+  sidequest-uploads:

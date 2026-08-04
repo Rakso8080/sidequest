@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { Modal } from "./modal";
 import { proofLabel } from "../lib/format";
+import { sfx } from "../lib/sound";
 
 export function SubmitProofModal({
   open,
@@ -43,13 +44,17 @@ export function SubmitProofModal({
       return api.postForm(`/submissions/${submissionId}/submit`, form);
     },
     onSuccess: () => {
+      sfx.success();
       qc.invalidateQueries();
       onClose();
       setText("");
       setFile(null);
       setPreview(null);
     },
-    onError: (err: any) => setError(err.message || "Upload failed"),
+    onError: (err: any) => {
+      sfx.error();
+      setError(err.message || "Upload failed");
+    },
   });
 
   const valid = text.trim() || (needsFile && file);

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from collections import defaultdict, deque
+from time import time
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -12,9 +15,33 @@ from ..security import create_token, hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# Simple in-memory rate limiter for brute-force protection.
+AUTH_WINDOW_SECONDS = 300
+AUTH_MAX_ATTEMPTS = 10
+_attempts: dict = defaultdict(deque)
+
+
+def _check_rate_limit(key: str) -> None:
+    now = time()
+    dq = _attempts[key]
+    while dq and now - dq[0] > AUTH_WINDOW_SECONDS:
+        dq.popleft()
+    if len(dq) >= AUTH_MAX_ATTEMPTS:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts. Try again in a few minutes.",
+        )
+    dq.append(now)
+
+
+def _rate_key(request: Request, username_or_email: str) -> str:
+    ip = request.client.host if request.client else "unknown"
+    return f"{ip}:{username_or_email.lower()}"
+
 
 @router.post("/register", response_model=TokenOut)
-def register(payload: RegisterIn, db: Session = Depends(get_db)):
+def register(payload: RegisterIn, request: Request, db: Session = Depends(get_db)):
+    _check_rate_limit(_rate_key(request, payload.username))
     email = payload.email.strip().lower()
     username = payload.username.strip()
     exists = (
@@ -36,7 +63,8 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenOut)
-def login(payload: LoginIn, db: Session = Depends(get_db)):
+def login(payload: LoginIn, request: Request, db: Session = Depends(get_db)):
+    _check_rate_limit(_rate_key(request, payload.username_or_email))
     value = payload.username_or_email.strip().lower()
     user = (
         db.query(User)

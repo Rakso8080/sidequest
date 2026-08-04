@@ -78,6 +78,10 @@ class Quest(Base):
     proof_type: Mapped[str] = mapped_column(String(20), default="photo")
     time_limit_hours: Mapped[int] = mapped_column(Integer, default=72)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    scheduled_for: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_by: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     squad: Mapped["Squad"] = relationship(back_populates="quests")
@@ -103,6 +107,22 @@ class QuestProposal(Base):
     time_limit_hours: Mapped[int] = mapped_column(Integer, default=72)
     status: Mapped[str] = mapped_column(String(20), default="pending")  # pending | approved | rejected
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    user: Mapped["User"] = relationship()
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    squad_id: Mapped[int] = mapped_column(
+        ForeignKey("squads.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utcnow, server_default=func.now()
+    )
 
     user: Mapped["User"] = relationship()
 

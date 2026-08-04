@@ -56,6 +56,9 @@ export interface Quest {
   proof_type: "photo" | "video" | "text" | "self_report";
   time_limit_hours: number;
   is_active: boolean;
+  scheduled_for: string | null;
+  created_by: number | null;
+  created_by_name: string | null;
   my_status: string | null;
 }
 
@@ -125,6 +128,15 @@ export interface Notification {
   title: string;
   body: string;
   read: boolean;
+  created_at: string;
+}
+
+export interface ChatMessage {
+  id: number;
+  user_id: number;
+  user_name: string;
+  user_avatar: string;
+  text: string;
   created_at: string;
 }
 

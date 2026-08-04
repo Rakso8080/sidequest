@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
-import type { Quest, Squad } from "../types";
-import { difficultyStyle, proofIcon, proofLabel } from "../lib/format";
+import type { Quest, QuestProposal, Squad } from "../types";
+import { countdownTo, difficultyStyle, proofIcon, proofLabel } from "../lib/format";
 import { EmptyState, PageLoader } from "../components/ui";
 import { useToast, Toast } from "../components/modal";
 import { NewQuestModal } from "../components/NewQuestModal";
 import { ProposeQuestModal } from "../components/ProposeQuestModal";
 import { ProposalsModal } from "../components/ProposalsModal";
 import { SpinWheelModal } from "../components/SpinWheelModal";
+import { PlanQuestModal } from "../components/PlanQuestModal";
 import { useAuth } from "../store/auth";
-import type { QuestProposal } from "../types";
+import { sfx } from "../lib/sound";
 
 export function QuestsPage() {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ export function QuestsPage() {
   const [proposeOpen, setProposeOpen] = useState(false);
   const [proposalsOpen, setProposalsOpen] = useState(false);
   const [wheelOpen, setWheelOpen] = useState(false);
+  const [planOpen, setPlanOpen] = useState(false);
 
   const { data: quests, isLoading } = useQuery<Quest[]>({
     queryKey: ["quests"],
@@ -41,19 +43,24 @@ export function QuestsPage() {
   const startQuest = useMutation({
     mutationFn: (id: number) => api.post<Quest>("/quests/start", { quest_id: id }),
     onSuccess: (q: Quest) => {
+      sfx.pop();
       show(`Started “${q.title}” — go earn it! ⚔️`);
       qc.invalidateQueries();
     },
-    onError: (err: any) => show(err.message || "Couldn't start quest"),
+    onError: (err: any) => {
+      sfx.error();
+      show(err.message || "Couldn't start quest");
+    },
   });
 
   const categories = squad?.settings?.categories ?? [];
   const isAdmin = squad?.admin_id === user?.id;
-  const list = (quests ?? []).filter(
-    (q) =>
-      (category === "all" || q.category === category) &&
-      (!showMine || q.my_status === "in_progress" || q.my_status === "pending"),
+  const now = Date.now();
+  const allFiltered = (quests ?? []).filter(
+    (q) => (category === "all" || q.category === category) && (showMine ? q.my_status === "in_progress" || q.my_status === "pending" : true),
   );
+  const planned = allFiltered.filter((q) => q.scheduled_for && new Date(q.scheduled_for).getTime() > now);
+  const list = allFiltered.filter((q) => !q.scheduled_for || new Date(q.scheduled_for).getTime() <= now);
   const pendingCount = proposals?.filter((p) => p.status === "pending").length ?? 0;
 
   if (isLoading || !quests || !squad) return <PageLoader />;
@@ -77,11 +84,14 @@ export function QuestsPage() {
         <button className="btn-primary !py-3" onClick={() => setWheelOpen(true)} disabled={list.length === 0}>
           🎡 Spin the wheel
         </button>
-        <div className="grid grid-cols-2 gap-2">
-          <button className="btn-ghost !py-3" onClick={() => setProposeOpen(true)}>
+        <div className="grid grid-cols-3 gap-2">
+          <button className="btn-ghost !py-3 !px-2 !text-[11px]" onClick={() => setProposeOpen(true)}>
             💡 Propose
           </button>
-          <button className="btn-ghost relative !py-3" onClick={() => setProposalsOpen(true)}>
+          <button className="btn-ghost !py-3 !px-2 !text-[11px]" onClick={() => setPlanOpen(true)}>
+            🗓️ Plan
+          </button>
+          <button className="btn-ghost relative !py-3 !px-2" onClick={() => setProposalsOpen(true)}>
             🗒️
             {pendingCount > 0 && (
               <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold">
@@ -115,6 +125,39 @@ export function QuestsPage() {
           ⚔️ In progress
         </button>
       </div>
+
+      {planned.length > 0 && (
+        <section>
+          <h2 className="mb-2 font-display text-lg font-bold text-sky-300">🗓️ Planned ({planned.length})</h2>
+          <div className="space-y-3">
+            {planned.map((q) => {
+              const diff = difficultyStyle(q.difficulty);
+              return (
+                <div key={q.id} className="card animate-slide-up opacity-90">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="chip bg-white/10 text-white/60">{q.category}</span>
+                        <span className={`chip ${diff.cls}`}>{diff.label}</span>
+                        <span className="chip bg-sky-500/20 text-sky-300">📅 {countdownTo(q.scheduled_for!)}</span>
+                      </div>
+                      <h3 className="mt-2 font-display text-base font-bold">{q.title}</h3>
+                      {q.description && <p className="mt-0.5 text-sm text-white/55">{q.description}</p>}
+                      {q.created_by_name && (
+                        <div className="mt-1.5 text-xs text-white/40">planned by {q.created_by_name}</div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="font-display text-2xl font-extrabold text-fuchsia-300">+{q.points}</div>
+                      <span className="chip mt-1 bg-sky-500/20 text-sky-300">coming soon</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {list.length === 0 ? (
         <EmptyState icon="🗺️" title="No quests here" subtitle="Check another category — or ask your admin to add some." />
@@ -163,6 +206,7 @@ export function QuestsPage() {
 
       <NewQuestModal open={newQuestOpen} onClose={() => setNewQuestOpen(false)} squad={squad} />
       <ProposeQuestModal open={proposeOpen} onClose={() => setProposeOpen(false)} squad={squad} />
+      <PlanQuestModal open={planOpen} onClose={() => setPlanOpen(false)} squad={squad} />
       <ProposalsModal
         open={proposalsOpen}
         onClose={() => setProposalsOpen(false)}

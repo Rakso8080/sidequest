@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import timedelta, timezone
 from typing import Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -25,6 +25,7 @@ def _quest_out(db: Session, quest: Quest, user: User) -> QuestOut:
         .order_by(Submission.started_at.desc())
         .first()
     )
+    creator = db.get(User, quest.created_by) if quest.created_by else None
     return QuestOut(
         id=quest.id,
         title=quest.title,
@@ -35,8 +36,23 @@ def _quest_out(db: Session, quest: Quest, user: User) -> QuestOut:
         proof_type=quest.proof_type,
         time_limit_hours=quest.time_limit_hours,
         is_active=quest.is_active,
+        scheduled_for=quest.scheduled_for,
+        created_by=quest.created_by,
+        created_by_name=creator.display_name if creator else None,
         my_status=my.status if my else None,
     )
+
+
+def _validate_quest_fields(payload, settings) -> None:
+    if payload.category not in settings.get("categories", []):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Category must be one of: {', '.join(settings.get('categories', []))}",
+        )
+    if payload.difficulty not in VALID_DIFFICULTIES:
+        raise HTTPException(status_code=400, detail="Invalid difficulty")
+    if payload.proof_type not in VALID_PROOF_TYPES:
+        raise HTTPException(status_code=400, detail="Invalid proof type")
 
 
 @router.get("", response_model=List[QuestOut])
@@ -67,6 +83,11 @@ def start_quest(
     quest = db.get(Quest, payload.quest_id)
     if quest is None or quest.squad_id != squad.id or not quest.is_active:
         raise HTTPException(status_code=404, detail="Quest not found")
+    if quest.scheduled_for is not None and quest.scheduled_for > utcnow():
+        raise HTTPException(
+            status_code=400,
+            detail="This quest isn't available yet — wait for its start date.",
+        )
 
     active = (
         db.query(Submission)
@@ -93,6 +114,51 @@ def start_quest(
     return _quest_out(db, quest, user)
 
 
+@router.post("/plan", response_model=QuestOut)
+def plan_quest(
+    payload: QuestIn,
+    user: User = Depends(require_member),
+    db: Session = Depends(get_db),
+):
+    squad = get_user_squad(db, user)
+    settings = get_settings(squad)
+    _validate_quest_fields(payload, settings)
+    if payload.scheduled_for is None:
+        raise HTTPException(
+            status_code=400, detail="Planned quests need a start date"
+        )
+    # Normalize to naive UTC so we can compare with utcnow().
+    sched = payload.scheduled_for
+    if sched.tzinfo is not None:
+        sched = sched.astimezone(timezone.utc).replace(tzinfo=None)
+    if sched <= utcnow():
+        raise HTTPException(
+            status_code=400, detail="Pick a date in the future"
+        )
+    quest = Quest(
+        squad_id=squad.id,
+        is_active=True,
+        created_by=user.id,
+        scheduled_for=sched,
+        **{k: v for k, v in payload.model_dump().items() if k != "scheduled_for"},
+    )
+    db.add(quest)
+    db.flush()
+    for member in squad.members:
+        if member.squad_id == squad.id and member.id != user.id:
+            notify(
+                db,
+                member.id,
+                squad.id,
+                "A quest is planned 🗓️",
+                f"{user.display_name} planned “{quest.title}” for "
+                f"{quest.scheduled_for.strftime('%b %d')}.",
+                ntype="info",
+            )
+    db.flush()
+    return _quest_out(db, quest, user)
+
+
 @router.post("", response_model=QuestOut)
 def create_quest(
     payload: QuestIn,
@@ -101,16 +167,8 @@ def create_quest(
 ):
     squad = get_user_squad(db, admin)
     settings = get_settings(squad)
-    if payload.category not in settings.get("categories", []):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Category must be one of: {', '.join(settings.get('categories', []))}",
-        )
-    if payload.difficulty not in VALID_DIFFICULTIES:
-        raise HTTPException(status_code=400, detail="Invalid difficulty")
-    if payload.proof_type not in VALID_PROOF_TYPES:
-        raise HTTPException(status_code=400, detail="Invalid proof type")
-    quest = Quest(squad_id=squad.id, is_active=True, **payload.model_dump())
+    _validate_quest_fields(payload, settings)
+    quest = Quest(squad_id=squad.id, is_active=True, created_by=admin.id, **payload.model_dump())
     db.add(quest)
     db.flush()
     return _quest_out(db, quest, admin)
@@ -184,15 +242,7 @@ def propose_quest(
 ):
     squad = get_user_squad(db, user)
     settings = get_settings(squad)
-    if payload.category not in settings.get("categories", []):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Category must be one of: {', '.join(settings.get('categories', []))}",
-        )
-    if payload.difficulty not in VALID_DIFFICULTIES:
-        raise HTTPException(status_code=400, detail="Invalid difficulty")
-    if payload.proof_type not in VALID_PROOF_TYPES:
-        raise HTTPException(status_code=400, detail="Invalid proof type")
+    _validate_quest_fields(payload, settings)
 
     proposal = QuestProposal(
         squad_id=squad.id,

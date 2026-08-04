@@ -6,6 +6,7 @@ import { AppShell } from "./components/NavBar";
 import { AuthPage } from "./pages/AuthPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { QuestsPage } from "./pages/QuestsPage";
+import { ChatPage } from "./pages/ChatPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { SquadPage } from "./pages/SquadPage";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -53,6 +54,16 @@ export default function App() {
           <Protected>
             <SquadRequired>
               <QuestsPage />
+            </SquadRequired>
+          </Protected>
+        }
+      />
+      <Route
+        path="/chat"
+        element={
+          <Protected>
+            <SquadRequired>
+              <ChatPage />
             </SquadRequired>
           </Protected>
         }

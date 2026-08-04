@@ -1,4 +1,5 @@
 const TOKEN_KEY = "sq_token";
+const API_BASE: string = (import.meta.env.VITE_API_BASE as string | undefined) ?? "";
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -28,7 +29,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers["Content-Type"] = "application/json";
   }
 
-  const res = await fetch(`/api${path}`, { ...options, headers });
+  const res = await fetch(`${API_BASE}/api${path}`, { ...options, headers });
 
   if (res.status === 401) {
     clearToken();

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import os
 from datetime import datetime, timedelta, timezone
 
 import jwt
 from passlib.context import CryptContext
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "sidequest-dev-secret-change-me")
+from .config import SECRET_KEY
+
 ALGORITHM = "HS256"
 TOKEN_TTL_HOURS = 24 * 7
 

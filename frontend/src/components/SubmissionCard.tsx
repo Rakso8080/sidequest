@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Submission } from "../types";
-import { proofIcon, timeAgo, timeLeft } from "../lib/format";
+import { assetUrl, proofIcon, timeAgo, timeLeft } from "../lib/format";
 import { Avatar } from "./ui";
 import { SubmitProofModal } from "./SubmitProofModal";
 
@@ -52,7 +52,7 @@ export function SubmissionCard({ sub }: { sub: Submission }) {
 
       {showPhoto && sub.proof_file && (
         <div className="mt-3 overflow-hidden rounded-xl bg-black/30">
-          <img src={sub.proof_file} alt="Proof" className="max-h-56 w-full object-cover" />
+          <img src={assetUrl(sub.proof_file)} alt="Proof" className="max-h-56 w-full object-cover" />
         </div>
       )}
 

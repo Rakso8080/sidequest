@@ -100,6 +100,7 @@ class QuestIn(BaseModel):
     points: int = Field(ge=5, le=1000)
     proof_type: str = "photo"
     time_limit_hours: int = Field(ge=1, le=24 * 30)
+    scheduled_for: Optional[datetime] = None
 
 
 class QuestOut(BaseModel):
@@ -112,6 +113,9 @@ class QuestOut(BaseModel):
     proof_type: str
     time_limit_hours: int
     is_active: bool
+    scheduled_for: Optional[datetime] = None
+    created_by: Optional[int] = None
+    created_by_name: Optional[str] = None
     my_status: Optional[str] = None  # in_progress | pending | submitted/approved/etc
 
 
@@ -204,6 +208,19 @@ class NotificationOut(BaseModel):
     body: str
     read: bool
     created_at: datetime
+
+
+class ChatMessageOut(BaseModel):
+    id: int
+    user_id: int
+    user_name: str
+    user_avatar: str
+    text: str
+    created_at: datetime
+
+
+class ChatIn(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)
 
 
 class LeaderboardEntryOut(BaseModel):

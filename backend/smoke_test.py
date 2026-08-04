@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import io
 import os
+import pathlib
 import sys
 
 os.environ["DATABASE_URL"] = "sqlite:///./test_smoke.db"
+
+# Fresh DB each run so the suite is re-runnable.
+pathlib.Path("./test_smoke.db").unlink(missing_ok=True)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -273,6 +277,92 @@ def test_full_flow(client: TestClient):
     titles = [n["title"] for n in r.json()]
     assert any("approved" in t.lower() or "made the board" in t for t in titles)
     assert any("declined" in t.lower() or "didn't make" in t for t in titles)
+
+    # --- Group chat ---
+    r = client.post("/chat", json={"text": "Let's crush this week!"}, headers=auth(m0["token"]))
+    assert r.status_code == 200, r.text
+    assert r.json()["text"] == "Let's crush this week!"
+    r = client.get("/chat", headers=auth(members[1]["token"]))
+    msgs = r.json()
+    assert len(msgs) >= 1
+    assert any(m["text"] == "Let's crush this week!" for m in msgs)
+    # after_id paging
+    r = client.get(f"/chat?after_id={msgs[-1]['id']}", headers=admin_h)
+    assert r.json() == []
+
+    # --- Planned quests ---
+    from datetime import datetime, timedelta, timezone
+
+    future = (datetime.now() + timedelta(days=3)).isoformat()
+    r = client.post(
+        "/quests/plan",
+        json={
+            "title": "Weekend beach run",
+            "description": "Group run on Saturday.",
+            "category": "Fitness",
+            "difficulty": "medium",
+            "points": 50,
+            "proof_type": "photo",
+            "time_limit_hours": 72,
+            "scheduled_for": future,
+        },
+        headers=auth(m0["token"]),
+    )
+    assert r.status_code == 200, r.text
+    planned = r.json()
+    assert planned["scheduled_for"] is not None
+    assert planned["created_by_name"] is not None
+
+    # TZ-aware ISO string (what the frontend sends) must be accepted
+    r = client.post(
+        "/quests/plan",
+        json={
+            "title": "TZ aware plan",
+            "description": "x",
+            "category": "Wildcard",
+            "difficulty": "easy",
+            "points": 20,
+            "proof_type": "text",
+            "time_limit_hours": 24,
+            "scheduled_for": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+        },
+        headers=auth(m0["token"]),
+    )
+    assert r.status_code == 200, r.text
+
+    # Not startable yet
+    r = client.post("/quests/start", json={"quest_id": planned["id"]}, headers=auth(m0["token"]))
+    assert r.status_code == 400
+
+    # A plan with a past date becomes startable (admin schedules it)
+    past = (datetime.now() - timedelta(minutes=5)).isoformat()
+    r = client.post(
+        "/quests",
+        json={
+            "title": "Already due plan",
+            "description": "x",
+            "category": "Wildcard",
+            "difficulty": "easy",
+            "points": 20,
+            "proof_type": "text",
+            "time_limit_hours": 24,
+            "scheduled_for": past,
+        },
+        headers=admin_h,
+    )
+    due = r.json()
+    r = client.post("/quests/start", json={"quest_id": due["id"]}, headers=auth(m0["token"]))
+    assert r.status_code == 200, r.text
+
+    # --- Rate limiting ---
+    code = None
+    for _ in range(11):
+        r = client.post(
+            "/auth/login",
+            json={"username_or_email": "member0", "password": "wrong"},
+        )
+        code = r.status_code
+    assert code == 429
 
     print("ALL SMOKE TESTS PASSED")
 

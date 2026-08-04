@@ -1,0 +1,7 @@
+# SideQuest Caddy reverse proxy — serves the app over HTTPS.
+# The container listens on 127.0.0.1:8000 (see docker-compose.yml).
+# Replace sidequest.example.com with your real domain.
+
+sidequest.example.com {
+    reverse_proxy 127.0.0.1:8000
+}

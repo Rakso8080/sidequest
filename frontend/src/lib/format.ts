@@ -68,3 +68,23 @@ export const RANK_EMOJI: Record<number, string> = {
   2: "🥈",
   3: "🥉",
 };
+
+/** Resolve an uploaded file path to a full URL when the API lives elsewhere. */
+export function assetUrl(p: string | null | undefined): string | undefined {
+  if (!p) return undefined;
+  if (/^(https?:|data:|blob:)/.test(p)) return p;
+  const base: string = (import.meta.env.VITE_API_BASE as string | undefined) ?? "";
+  return `${base}${p}`;
+}
+
+/** Human countdown until a future date (for planned quests). */
+export function countdownTo(iso: string): string {
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return "available now";
+  const days = Math.floor(ms / 86400000);
+  const hours = Math.floor((ms % 86400000) / 3600000);
+  if (days > 0) return `starts in ${days}d ${hours}h`;
+  const mins = Math.floor((ms % 3600000) / 60000);
+  if (hours > 0) return `starts in ${hours}h ${mins}m`;
+  return `starts in ${Math.max(1, Math.ceil(ms / 60000))}m`;
+}

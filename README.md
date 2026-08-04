@@ -12,9 +12,14 @@ lighthearted punishments when you fail. Mobile-first web app.
   time limits. Admins add/remove quests.
 - **Your own quests** — any member can **propose** a custom quest; the admin
   approves or declines it. Approved proposals land on the board.
+- **Plan quests ahead** — any member can schedule a quest for a future date; it
+  appears as "Planned" on the board and unlocks when the date arrives.
 - **Spin wheel** — 🎡 spin to let fate pick your next challenge from the board.
 - **Proof & voting** — submit photo/video/text proof, squad votes Approve/Reject
   (majority, unanimous, or quorum %, configurable). Anonymous voting option.
+- **Group chat** — real-time squad chat with unread badges on the tab.
+- **Sound effects** — synthesized UI sounds (clicks, dings, wheel ticks,
+  victory jingles), toggleable from your profile. Muted state is remembered.
 - **Points & punishments** — approved quests award points and build streaks;
   rejected/expired quests assign a random punishment from an admin-editable pool
   with a due date.
@@ -49,6 +54,9 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 The API runs at `http://localhost:8000` (docs at `/docs`). On first launch it
 creates `app.db` and seeds a demo squad.
 
+Configuration lives in `backend/.env` — copy `backend/.env.example` and set a
+strong `SECRET_KEY`. Auth logins are rate-limited (10 tries / 5 min per IP).
+
 ### 2. Frontend (terminal 2)
 
 ```bash
@@ -80,17 +88,74 @@ source .venv/bin/activate
 python smoke_test.py   # end-to-end API test (register → join → quest → submit → vote → punish)
 ```
 
-## Deployment notes
+## Deployment
 
-- The frontend expects the API at the same origin (`/api` → backend). In dev,
-  Vite proxies it. In production, serve the built `frontend/dist` behind a
-  reverse proxy that forwards `/api` and `/uploads` to the FastAPI process, or
-  mount it via FastAPI static files.
-- The PWA (installable app) only registers its service worker in production
-  builds — try it with `npm run build && npm run preview`.
-- Set a strong `SECRET_KEY` env var for the backend in production.
-- For real multi-user deployments, swap `DATABASE_URL` to Postgres (SQLAlchemy
-  handles it). Photo/video uploads store to `backend/uploads` by default.
+### Option A — Docker + Caddy (recommended for a VPS)
+
+The included `Dockerfile` builds the frontend with Node and serves both the SPA
+and the API from a single Python container, so you only need one process.
+
+1. Set up a domain pointing at your server.
+2. Copy and fill the config:
+
+   ```bash
+   cp backend/.env.example backend/.env
+   # edit backend/.env — SECRET_KEY, CORS_ORIGINS=https://your.domain
+   ```
+
+3. Run it:
+
+   ```bash
+   docker compose up -d --build
+   ```
+
+   The container listens on `127.0.0.1:8000` (not exposed publicly).
+
+4. Install [Caddy](https://caddyserver.com), copy `Caddyfile`, replace
+   `sidequest.example.com` with your domain, and run `caddy run`. Caddy
+   automatically provisions a TLS certificate, so you get HTTPS for free.
+
+Persistent data lives in Docker volumes (`sidequest-data` for the DB,
+`sidequest-uploads` for proof photos).
+
+### Option B — same-origin production build
+
+1. Build the frontend: `cd frontend && npm run build`.
+2. Run only the backend — `STATIC_DIR` defaults to `frontend/dist`, so FastAPI
+   serves the app and `/api` + `/uploads` from one process:
+
+   ```bash
+   cd backend && source .venv/bin/activate
+   SECRET_KEY=<strong-key> CORS_ORIGINS=https://your.domain uvicorn app.main:app --host 0.0.0.0 --port 8000
+   ```
+
+3. Put Caddy or nginx in front with TLS, forwarding everything to `:8000`.
+
+### Config
+
+| Env var            | Purpose                                                        | Default |
+| ------------------ | -------------------------------------------------------------- | ------- |
+| `SECRET_KEY`       | JWT signing key — **set a strong value in prod**               | dev default (warns) |
+| `DATABASE_URL`     | SQLAlchemy URL; swap to Postgres for real scale                | local SQLite |
+| `CORS_ORIGINS`     | Comma-separated allowed browser origins                        | `*` in dev |
+| `STATIC_DIR`       | Directory of the built SPA                                     | `frontend/dist` |
+| `UPLOAD_DIR`       | Proof photo/video storage directory                            | `backend/uploads` |
+
+**Frontend**: for a remote API, set `VITE_API_BASE` at build time so the app
+knows the API origin (it defaults to same-origin, which works in the setups
+above):
+
+```bash
+cd frontend && VITE_API_BASE=https://your.domain npm run build
+```
+
+### Security notes
+
+- Never use the default `SECRET_KEY` in production — tokens are signed with it.
+- Use HTTPS everywhere (Caddy does this automatically).
+- Auth endpoints are rate-limited; keep `CORS_ORIGINS` explicit in production.
+- Proof uploads accept images and short videos; a future hardening step could
+  add virus scanning and per-user quotas.
 
 ## GitHub
 

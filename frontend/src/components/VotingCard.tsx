@@ -3,7 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { Submission } from "../types";
 import { Avatar, Confetti } from "./ui";
-import { timeAgo } from "../lib/format";
+import { assetUrl, timeAgo } from "../lib/format";
+import { sfx } from "../lib/sound";
 
 export function VotingCard({ sub }: { sub: Submission }) {
   const qc = useQueryClient();
@@ -14,13 +15,18 @@ export function VotingCard({ sub }: { sub: Submission }) {
     mutationFn: (decision: string) =>
       api.post("/votes", { submission_id: sub.id, decision }),
     onSuccess: (data: any) => {
+      sfx.approve();
       if (data.status === "approved") {
         setCelebrate(true);
+        sfx.success();
         window.setTimeout(() => setCelebrate(false), 1400);
       }
       qc.invalidateQueries();
     },
-    onError: (err: any) => setError(err.message || "Vote failed"),
+    onError: (err: any) => {
+      sfx.error();
+      setError(err.message || "Vote failed");
+    },
   });
 
   return (
@@ -43,7 +49,7 @@ export function VotingCard({ sub }: { sub: Submission }) {
         <div className="font-display text-base font-bold">{sub.quest_title}</div>
         {sub.proof_file && (
           <div className="mt-2 overflow-hidden rounded-xl bg-black/30">
-            <img src={sub.proof_file} alt="Proof" className="max-h-64 w-full object-cover" />
+            <img src={assetUrl(sub.proof_file)} alt="Proof" className="max-h-64 w-full object-cover" />
           </div>
         )}
         {sub.proof_text && (

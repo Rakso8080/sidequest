@@ -3,12 +3,14 @@ __pycache__/
 *.pyc
 .venv/
 backend/app.db
+backend/test_smoke.db
 backend/uploads/
 backend/.env
 
 # Node
 node_modules/
 frontend/dist/
+frontend/tsconfig.tsbuildinfo
 *.local
 
 # OS

@@ -7,6 +7,8 @@ import { Avatar, PageLoader, ProgressBar, EmptyState } from "../components/ui";
 import { SubmissionCard } from "../components/SubmissionCard";
 import { Toast, useToast } from "../components/modal";
 import { AVATARS } from "../lib/format";
+import { sfx } from "../lib/sound";
+import { useInstallPrompt } from "../lib/pwa";
 
 export function ProfilePage() {
   const { user, setUser } = useAuth();
@@ -31,6 +33,8 @@ export function ProfilePage() {
     queryKey: ["my-punishments"],
     queryFn: () => api.get("/punishments/mine"),
   });
+  const { canInstall, install } = useInstallPrompt();
+  const [soundOn, setSoundOn] = useState(!sfx.isMuted());
 
   const saveProfile = useMutation({
     mutationFn: () => api.patch<User>("/users/me", form),
@@ -115,6 +119,34 @@ export function ProfilePage() {
           <div className="text-center text-xs font-bold text-white/50">
             Favorite category: <span className="text-amber-300">{stats.favorite_category}</span>
           </div>
+        )}
+      </section>
+
+      {/* Settings */}
+      <section className="card space-y-3">
+        <h2 className="font-display text-lg font-bold">⚙️ Settings</h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm font-bold">Sound effects</div>
+            <div className="text-xs text-white/40">Ticks, dings, and victory jingles</div>
+          </div>
+          <button
+            className={`h-9 w-16 rounded-full p-1 transition ${soundOn ? "bg-emerald-500" : "bg-white/10"}`}
+            onClick={() => {
+              const next = !soundOn;
+              setSoundOn(next);
+              sfx.setMuted(!next);
+              if (next) sfx.pop();
+            }}
+            aria-label="Toggle sound"
+          >
+            <div className={`h-7 w-7 rounded-full bg-white transition ${soundOn ? "translate-x-7" : ""}`} />
+          </button>
+        </div>
+        {canInstall && (
+          <button className="btn-primary w-full" onClick={install}>
+            📲 Install the app
+          </button>
         )}
       </section>
 
